@@ -1,0 +1,156 @@
+# hexagonal-ski-rental
+
+A ski and snowboard rental management app for a winter-season shop, built with Django
+to learn and demonstrate **hexagonal architecture (ports and adapters)**.
+
+The architecture is the point of this project. When in doubt, favor clear boundaries
+over Django shortcuts.
+
+## Stack
+
+- Python 3.12+, Django
+- Frontend: Django templates + HTMX (server-rendered, no SPA)
+- Tests: pytest (+ pytest-django for adapter tests only)
+- Boundary enforcement: import-linter
+
+## Domain
+
+Users are **shop staff** at the counter. Rentals are made **in person only**:
+a rental always starts today (no booking in advance for a future period).
+
+- **Equipment**: an individually tracked physical item (skis, snowboard, boots, helmet, poles)
+  with type, brand/model, size, status and days used. Skis, snowboards and boots also have
+  a **range** (gamme); helmets and poles don't.
+- **Customer**: name, height, weight, boot size, skill level.
+- **Rental**: a customer, a list of equipment items, a rental period, a price and a status
+  (active, returned).
+- **Value objects**: `RentalPeriod` (knows how to detect overlaps), `Money`, `Size`
+  (cm or mondopoint), `SkillLevel` (beginner, intermediate, advanced, expert),
+  `Range` (e.g. discovery, sport, premium).
+
+### Business rules
+
+- An item can only be rented when its status is `AVAILABLE`. Since rentals start today,
+  the status is enough to decide availability in the MVP.
+- `RentalPeriod` still knows how to detect overlaps, kept ready for future reservations,
+  but availability does not rely on it yet.
+- Equipment lifecycle: `AVAILABLE → RENTED → (returned) → AVAILABLE`,
+  or `→ MAINTENANCE` when damaged, then `MAINTENANCE → AVAILABLE` once repaired;
+  any state can go `→ RETIRED`.
+- Price is computed from the equipment **range**, the period (day / week rates)
+  and package discounts. `PricingPolicy` (domain) does the calculation only; the prices themselves
+  come from the `PriceListRepository` outbound port. In the MVP its adapter is `StaticPriceList`
+  (fixed prices in code); later a database adapter makes the price list editable
+  through `GetPriceList` / `UpdatePriceList`.
+- Range recommendation: beginner → discovery, intermediate → sport, advanced / expert → premium.
+  It is only a suggestion; staff can rent any range to any customer.
+- Size recommendation: ski length from height and level, board length from weight.
+
+## MVP scope
+
+1. Inventory: register equipment, list it by type, size and status.
+2. Register a customer.
+3. Create a rental at the counter (customer, range and size recommendation, available items,
+   period starting today, price).
+4. Return a rental, optionally flagging damage (item goes to maintenance).
+5. Complete maintenance (item goes back to available).
+6. Dashboard: currently rented, due back today, in maintenance.
+7. Notifications through the `Notifier` port, with a **logging adapter only** (no external service).
+   Events: rental created, rental returned, item sent to maintenance, maintenance completed.
+
+**Out of scope for now**: online booking and reservations for a future period, payments and deposits,
+season rentals, multiple shops, real notification channels (email, SMS), editable price list,
+staff authentication, DIN calculation. These are future adapters/features, so don't build them unless asked.
+
+The step-by-step branch plan is in [ROADMAP.md](ROADMAP.md).
+
+## Architecture
+
+Dependencies always point **inward**: adapters → application → domain.
+
+```
+rental/
+  domain/              # entities, value objects, business rules (pure Python)
+  application/
+    ports/inbound/     # use case interfaces: CreateRental, ReturnRental, ...
+    ports/outbound/    # what the app needs: EquipmentRepository, Clock, ...
+    services/          # use case implementations (implement inbound ports, use outbound ports)
+  adapters/
+    inbound/web/       # Django views + HTMX templates (call inbound ports)
+    outbound/orm/      # Django models + ORM repositories (implement outbound ports)
+    outbound/memory/   # in-memory repositories + recording notifier for tests
+    outbound/notifications/  # LoggingNotifier (later: EmailNotifier, SmsNotifier, ...)
+  bootstrap.py         # composition root: wires adapters into services
+```
+
+### Ports
+
+- **Inbound** (what the app offers): `RegisterEquipment`, `ListAvailableEquipment`,
+  `RegisterCustomer`, `RecommendEquipment`, `CreateRental`, `ReturnRental`,
+  `CompleteMaintenance`, `GetDashboard`.
+- **Outbound** (what the app needs): `EquipmentRepository`, `RentalRepository`,
+  `CustomerRepository`, `PriceListRepository`, `Clock`, `Notifier`, `UnitOfWork` (when atomic multi-entity writes are needed).
+
+Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports are explicit.
+
+### Adapters
+
+- **Inbound**: Django + HTMX views for shop staff.
+- **Outbound**:
+  - Repositories: Django ORM (production), in-memory (tests).
+  - `PriceListRepository`: `StaticPriceList` with fixed prices (MVP, also used in tests).
+  - `Clock`: `SystemClock` (production), `FixedClock` (tests).
+  - `Notifier`: `LoggingNotifier` writing to Python `logging` (production, the only one for now),
+    `RecordingNotifier` (tests). No email/SMS/external integrations unless asked.
+
+### Rules
+
+- `domain/` and `application/` must **never** import Django (enforced by import-linter).
+- Django ORM models live only in `adapters/outbound/orm/`. They are persistence details,
+  not the domain. Repositories map ORM models ↔ domain entities.
+- Use cases take a simple **command** dataclass and return a result dataclass.
+  No `HttpRequest`, no ORM models, no querysets cross the port boundary.
+- Never call `date.today()` / `datetime.now()` in the core; use the `Clock` port.
+- The `Notifier` port receives domain-level notifications (e.g. a `RentalCreated` dataclass),
+  never pre-formatted messages. Formatting belongs in the adapter.
+- Views never build adapters; they get use cases from `bootstrap.py`.
+- Business rules belong in the domain, not in views, forms or ORM models.
+- Domain errors are raised as domain exceptions; inbound adapters translate them
+  into HTTP responses / messages.
+
+### Repositories
+
+- Entity ids are **UUIDs generated by the domain** when the entity is created,
+  never by the database (no auto-increment ids in the core).
+- Repository methods express **business intent** (`find_available(...)`,
+  `find_rentals_overlapping(item_ids, period)`, `find_due_back_on(date)`),
+  never generic or storage-shaped filters.
+- **One repository per aggregate root, not per table**: a `Rental` and its rented items
+  are loaded and saved together by `RentalRepository`.
+- Repositories store and retrieve; they never apply business rules.
+- Only **services** use repositories. Domain entities never call a repository.
+- Atomic writes across several aggregates go through `UnitOfWork`.
+
+## Testing
+
+- Every branch includes tests for the code it adds or changes. No code without tests.
+- A branch is mergeable only when CI is green (ruff, lint-imports, pytest).
+- A bug fix starts with a test that reproduces the bug.
+
+- **Domain + use cases**: plain pytest with in-memory adapters, `StaticPriceList`, `FixedClock`
+  and `RecordingNotifier`.
+  No database. These are the majority of the tests.
+- **ORM adapters**: a small number of pytest-django integration tests.
+- **Web adapters**: a few tests checking that views call the right use case and render results.
+
+## Commands
+
+Everything runs in Docker (Python 3.12 + PostgreSQL 16). First time: `cp .env.example .env`.
+
+- Start the app (runs migrations, then serves on http://localhost:8000): `docker compose up --build`
+- Run tests: `docker compose run --rm web pytest`
+- Check architecture boundaries: `docker compose run --rm web lint-imports`
+- Create migrations: `docker compose run --rm web python manage.py makemigrations`
+
+Django apps are the adapters themselves: `rental.adapters.outbound.orm` (models, migrations)
+and `rental.adapters.inbound.web` (views, templates). The core is not a Django app.

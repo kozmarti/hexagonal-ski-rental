@@ -1,0 +1,28 @@
+[project]
+name = "hexagonal-ski-rental"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+testpaths = ["tests"]
+
+[tool.importlinter]
+root_package = "rental"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Core does not depend on Django"
+type = "forbidden"
+source_modules = ["rental.domain", "rental.application"]
+forbidden_modules = ["django"]
+
+[[tool.importlinter.contracts]]
+name = "Dependencies point inward"
+type = "layers"
+layers = ["rental.adapters", "rental.application", "rental.domain"]
+
+[[tool.importlinter.contracts]]
+name = "Inbound and outbound adapters are independent"
+type = "independence"
+modules = ["rental.adapters.inbound", "rental.adapters.outbound"]
