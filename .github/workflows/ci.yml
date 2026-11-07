@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ski_rental
+          POSTGRES_USER: ski_rental
+          POSTGRES_PASSWORD: ski_rental
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ski_rental -d ski_rental"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_SECRET_KEY: ci-only-insecure-key
+      POSTGRES_DB: ski_rental
+      POSTGRES_USER: ski_rental
+      POSTGRES_PASSWORD: ski_rental
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (ruff)
+        run: ruff format --check .
+
+      - name: Architecture rules (import-linter)
+        run: lint-imports
+
+      - name: Tests (pytest)
+        run: pytest

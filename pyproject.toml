@@ -3,6 +3,17 @@ name = "hexagonal-ski-rental"
 version = "0.1.0"
 requires-python = ">=3.12"
 
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["rental/adapters/outbound/orm/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["rental", "config"]
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 testpaths = ["tests"]
