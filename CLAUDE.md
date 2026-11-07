@@ -150,6 +150,11 @@ Everything runs in Docker (Python 3.12 + PostgreSQL 16). First time: `cp .env.ex
 - Start the app (runs migrations, then serves on http://localhost:8000): `docker compose up --build`
 - Run tests: `docker compose run --rm web pytest`
 - Check architecture boundaries: `docker compose run --rm web lint-imports`
+- Lint: `docker compose run --rm web ruff check .`
+- Format: `docker compose run --rm web ruff format .` (CI runs `ruff format --check .`)
+
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs ruff, lint-imports and pytest
+on every pull request and on pushes to `main`.
 - Create migrations: `docker compose run --rm web python manage.py makemigrations`
 
 Django apps are the adapters themselves: `rental.adapters.outbound.orm` (models, migrations)
