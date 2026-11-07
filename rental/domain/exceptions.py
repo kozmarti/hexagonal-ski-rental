@@ -48,3 +48,15 @@ class InvalidPriceList(DomainError):
 
 class PriceNotFound(DomainError):
     pass
+
+
+class EquipmentNotFound(DomainError):
+    pass
+
+
+class CustomerNotFound(DomainError):
+    pass
+
+
+class RentalNotFound(DomainError):
+    pass
