@@ -52,6 +52,11 @@ a rental always starts today (no booking in advance for a future period).
 - Range recommendation: beginner → discovery, intermediate → sport, advanced / expert → premium.
   It is only a suggestion; staff can rent any range to any customer.
 - Size recommendation: ski and board length from height and level.
+  - Skis: height − 15 cm (beginner), − 10 (intermediate), − 5 (advanced), − 0 (expert).
+  - Snowboard: height − 25 cm (beginner), − 20 (intermediate), − 15 (advanced, expert).
+  - Boots: the customer's boot size.
+  - An item fits when it is in the recommended range and its size is within ± 5 cm
+    (skis, snowboards) or ± 0.5 mondopoint (boots).
 
 ## MVP scope
 
