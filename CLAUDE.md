@@ -85,7 +85,8 @@ rental/
   adapters/
     inbound/web/       # Django views + HTMX templates (call inbound ports)
     outbound/orm/      # Django models + ORM repositories (implement outbound ports)
-    outbound/memory/   # in-memory repositories + recording notifier for tests
+    outbound/memory/   # test adapters: in-memory repositories, unit of work, FixedClock, RecordingNotifier
+    outbound/price_list/     # StaticPriceList (MVP prices)
     outbound/notifications/  # LoggingNotifier (later: EmailNotifier, SmsNotifier, ...)
   bootstrap.py         # composition root: wires adapters into services
 ```
@@ -104,7 +105,9 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
 
 - **Inbound**: Django + HTMX views for shop staff.
 - **Outbound**:
-  - Repositories: Django ORM (production), in-memory (tests).
+  - Repositories: Django ORM (production), in-memory (tests). In-memory repositories store
+    copies, so a change is only kept when `save()` is called, like a real database.
+  - `UnitOfWork`: `transaction.atomic()` (production), `InMemoryUnitOfWork` (tests).
   - `PriceListRepository`: `StaticPriceList` with fixed prices (MVP, also used in tests).
   - `Clock`: `SystemClock` (production), `FixedClock` (tests).
   - `Notifier`: `LoggingNotifier` writing to Python `logging` (production, the only one for now),
