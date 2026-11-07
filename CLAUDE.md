@@ -21,7 +21,7 @@ a rental always starts today (no booking in advance for a future period).
 - **Equipment**: an individually tracked physical item (skis, snowboard, boots, helmet, poles)
   with type, brand/model, size, status and days used. Skis, snowboards and boots also have
   a **range** (gamme); helmets and poles don't.
-- **Customer**: name, height, weight, boot size, skill level.
+- **Customer**: name, height, boot size, skill level.
 - **Rental**: a customer, a list of equipment items, a rental period, a price and a status
   (active, returned).
 - **Value objects**: `RentalPeriod` (knows how to detect overlaps), `Money`, `Size`
@@ -34,17 +34,24 @@ a rental always starts today (no booking in advance for a future period).
   the status is enough to decide availability in the MVP.
 - `RentalPeriod` still knows how to detect overlaps, kept ready for future reservations,
   but availability does not rely on it yet.
-- Equipment lifecycle: `AVAILABLE → RENTED → (returned) → AVAILABLE`,
-  or `→ MAINTENANCE` when damaged, then `MAINTENANCE → AVAILABLE` once repaired;
+- Equipment lifecycle: `AVAILABLE → RENTED → MAINTENANCE → AVAILABLE`;
   any state can go `→ RETIRED`.
+- Every returned item goes to maintenance (waxing, sharpening, drying) before it can be
+  rented again. A damaged item is also flagged as needing repair; completing maintenance
+  clears the flag.
 - Price is computed from the equipment **range**, the period (day / week rates)
-  and package discounts. `PricingPolicy` (domain) does the calculation only; the prices themselves
+  and package discounts:
+  - Period days are counted with start and end included. A ski week is **Sunday to Friday = 6 days**.
+  - Per item: each block of 6 days costs the week rate; remaining days cost the day rate each,
+    capped at one week rate.
+  - The week rate must be lower than 6 day rates.
+  - Package: a rental with skis or a snowboard **and** boots gets 10% off the total. `PricingPolicy` (domain) does the calculation only; the prices themselves
   come from the `PriceListRepository` outbound port. In the MVP its adapter is `StaticPriceList`
   (fixed prices in code); later a database adapter makes the price list editable
   through `GetPriceList` / `UpdatePriceList`.
 - Range recommendation: beginner → discovery, intermediate → sport, advanced / expert → premium.
   It is only a suggestion; staff can rent any range to any customer.
-- Size recommendation: ski length from height and level, board length from weight.
+- Size recommendation: ski and board length from height and level.
 
 ## MVP scope
 
@@ -52,7 +59,7 @@ a rental always starts today (no booking in advance for a future period).
 2. Register a customer.
 3. Create a rental at the counter (customer, range and size recommendation, available items,
    period starting today, price).
-4. Return a rental, optionally flagging damage (item goes to maintenance).
+4. Return a rental: every item goes to maintenance, damaged items are flagged for repair.
 5. Complete maintenance (item goes back to available).
 6. Dashboard: currently rented, due back today, in maintenance.
 7. Notifications through the `Notifier` port, with a **logging adapter only** (no external service).
