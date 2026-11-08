@@ -15,4 +15,28 @@ urlpatterns = [
         ),
         name="inventory",
     ),
+    path(
+        "rentals/",
+        views.RentalsView.as_view(get_dashboard=bootstrap.get_dashboard),
+        name="rentals",
+    ),
+    path(
+        "rentals/new/",
+        views.NewRentalView.as_view(register_customer=bootstrap.register_customer),
+        name="rental-new",
+    ),
+    path(
+        "rentals/new/<uuid:customer_id>/",
+        views.ChooseEquipmentView.as_view(
+            recommend_equipment=bootstrap.recommend_equipment,
+            list_available_equipment=bootstrap.list_available_equipment,
+            create_rental=bootstrap.create_rental,
+        ),
+        name="rental-equipment",
+    ),
+    path(
+        "rentals/<uuid:rental_id>/return/",
+        views.ReturnRentalView.as_view(return_rental=bootstrap.return_rental),
+        name="rental-return",
+    ),
 ]
