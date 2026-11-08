@@ -1,0 +1,14 @@
+{% extends "rental/base.html" %}
+
+{% block title %}New rental · Ski Rental{% endblock %}
+
+{% block content %}
+  <h1>New rental</h1>
+  <p>Step 1 of 2: the customer.</p>
+
+  <form method="post" action="{% url 'rental-new' %}">
+    {% csrf_token %}
+    {% include "rental/_fields.html" %}
+    <button type="submit">Next: choose equipment</button>
+  </form>
+{% endblock %}

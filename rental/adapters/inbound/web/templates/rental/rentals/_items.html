@@ -1,0 +1,12 @@
+{% load rental_tags %}
+<fieldset>
+  <legend><strong>{{ title }}</strong></legend>
+  {% for item in items %}
+    <label>
+      <input type="checkbox" name="equipment" value="{{ item.id }}"{% if item.id|stringformat:"s" in selected %} checked{% endif %}>
+      {{ item.type|capfirst }} · {{ item.brand }} {{ item.model }} · {{ item.size|size }}{% if item.range %} · {{ item.range|capfirst }}{% endif %}
+    </label>
+  {% empty %}
+    <p><small>Nothing available.</small></p>
+  {% endfor %}
+</fieldset>

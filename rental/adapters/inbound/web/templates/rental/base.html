@@ -15,6 +15,7 @@
         <li><a href="{% url 'home' %}" class="contrast"><strong>Ski Rental</strong></a></li>
       </ul>
       <ul>
+        <li><a href="{% url 'rentals' %}" {% if page == 'rentals' or page == 'rental-new' or page == 'rental-equipment' %}aria-current="page"{% endif %}>Rentals</a></li>
         <li><a href="{% url 'inventory' %}" {% if page == 'inventory' %}aria-current="page"{% endif %}>Inventory</a></li>
       </ul>
     </nav>

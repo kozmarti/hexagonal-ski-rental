@@ -1,0 +1,16 @@
+{% for error in form.non_field_errors %}
+  <p><del>{{ error }}</del></p>
+{% endfor %}
+<div class="grid">
+  {% for field in form %}
+    <label>
+      {{ field.label }}
+      {{ field }}
+      {% if field.errors %}
+        <small>{{ field.errors|join:" " }}</small>
+      {% elif field.help_text %}
+        <small>{{ field.help_text }}</small>
+      {% endif %}
+    </label>
+  {% endfor %}
+</div>

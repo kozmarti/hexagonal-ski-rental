@@ -1,0 +1,53 @@
+{% extends "rental/base.html" %}
+{% load rental_tags %}
+
+{% block title %}New rental · Ski Rental{% endblock %}
+
+{% block content %}
+  <h1>New rental</h1>
+  <p>Step 2 of 2: the equipment.</p>
+
+  <article>
+    <header><strong>Recommendation</strong></header>
+    <p>
+      Range: <strong>{{ recommendation.range|capfirst }}</strong> ·
+      Skis: <strong>{{ recommendation.ski_length|size }}</strong> ·
+      Snowboard: <strong>{{ recommendation.snowboard_length|size }}</strong> ·
+      Boots: <strong>{{ recommendation.boot_size|size }}</strong>
+    </p>
+    <footer><small>A suggestion only: any available item can be rented.</small></footer>
+  </article>
+
+  <form method="post" action="{% url 'rental-equipment' customer_id %}">
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}
+      <p><del>{{ error }}</del></p>
+    {% endfor %}
+    {% for error in form.equipment.errors %}
+      <p><del>{{ error }}</del></p>
+    {% endfor %}
+
+    <div class="grid">
+      {% include "rental/rentals/_items.html" with title="Recommended skis" items=recommendation.skis %}
+      {% include "rental/rentals/_items.html" with title="Recommended snowboards" items=recommendation.snowboards %}
+      {% include "rental/rentals/_items.html" with title="Recommended boots" items=recommendation.boots %}
+    </div>
+    {% include "rental/rentals/_items.html" with title="Helmets and poles" items=accessories %}
+
+    <details>
+      <summary>Other available equipment ({{ others|length }})</summary>
+      {% include "rental/rentals/_items.html" with title="Any range, any size" items=others %}
+    </details>
+
+    <label>
+      {{ form.end_date.label }}
+      {{ form.end_date }}
+      {% if form.end_date.errors %}
+        <small>{{ form.end_date.errors|join:" " }}</small>
+      {% else %}
+        <small>The rental starts today. A ski week is Sunday to Friday.</small>
+      {% endif %}
+    </label>
+    <button type="submit">Create rental</button>
+  </form>
+{% endblock %}

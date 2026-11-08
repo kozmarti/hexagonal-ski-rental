@@ -1,0 +1,47 @@
+{% extends "rental/base.html" %}
+{% load rental_tags %}
+
+{% block title %}Rentals · Ski Rental{% endblock %}
+
+{% block content %}
+  <h1>Rentals</h1>
+  <p><a href="{% url 'rental-new' %}" role="button">New rental</a></p>
+
+  {% if returned %}
+    <p><ins>Rental returned. Its items are now in maintenance.</ins></p>
+  {% endif %}
+
+  {% for rental in rentals %}
+    <article id="rental-{{ rental.id }}">
+      <header>
+        <strong>{{ rental.customer_name }}</strong>
+        · {{ rental.start_date|date:"D j M" }} → {{ rental.end_date|date:"D j M" }}
+        · {{ rental.price|money }}
+        {% if rental.id == created %}<ins>New</ins>{% endif %}
+      </header>
+      <form method="post" action="{% url 'rental-return' rental.id %}"
+            hx-post="{% url 'rental-return' rental.id %}" hx-target="closest article" hx-swap="outerHTML">
+        {% csrf_token %}
+        <table>
+          <tbody>
+            {% for item in rental.equipment %}
+              <tr>
+                <td>{{ item.type|capfirst }}</td>
+                <td>{{ item.brand }} {{ item.model }}</td>
+                <td>{{ item.size|size }}</td>
+                <td>
+                  <label>
+                    <input type="checkbox" name="damaged" value="{{ item.id }}"> Damaged
+                  </label>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="submit" class="secondary">Return</button>
+      </form>
+    </article>
+  {% empty %}
+    <p>No active rentals.</p>
+  {% endfor %}
+{% endblock %}
