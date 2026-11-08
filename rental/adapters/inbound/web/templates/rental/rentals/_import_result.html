@@ -1,0 +1,1 @@
+{% load rental_tags %}✅ {% for item in items %}{{ item.type|capfirst }} {{ item.size|size }}{% if not forloop.last %}, {% endif %}{% endfor %} · {{ price|money }}

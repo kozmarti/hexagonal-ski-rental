@@ -1,0 +1,126 @@
+{% extends "rental/base.html" %}
+{% load rental_tags %}
+
+{% block title %}Import a group · Ski Rental{% endblock %}
+
+{% block content %}
+  <h1>Import a group</h1>
+
+  {% if lines %}
+    <article id="import-report">
+      <header>
+        <strong>{{ rented }} of {{ lines|length }} children equipped</strong>
+        · total {{ total|money }}
+        <p id="import-banner"></p>
+      </header>
+      <div class="overflow-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Line</th>
+              <th>Name</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in lines %}
+              <tr data-status="{% if line.rental_id %}done{% elif line.customer_id %}pending{% else %}failed{% endif %}">
+                <td>{{ line.line }}</td>
+                <td>{{ line.name }}</td>
+                <td id="import-result-{{ line.line }}">
+                  {% if line.rental_id %}
+                    {% include "rental/rentals/_import_result.html" with items=line.items price=line.price %}
+                  {% else %}
+                    <del>{{ line.error }}</del>
+                    {% if line.customer_id %}
+                      <div role="group">
+                        <button type="button" class="outline"
+                                hx-get="{% url 'rental-import-fit' line.customer_id %}?line={{ line.line }}&end_date={{ end_date|date:'Y-m-d' }}"
+                                hx-target="#fit-dialog-content"
+                                hx-on::after-request="document.getElementById('fit-dialog').showModal()">
+                          Fit by hand
+                        </button>
+                        <button type="button" class="secondary outline" data-not-renting>Not renting</button>
+                      </div>
+                    {% else %}
+                      <small>Not registered: fix this line and import it again.</small>
+                    {% endif %}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <footer><a href="{% url 'rentals' %}">See all rentals</a></footer>
+    </article>
+
+    <dialog id="fit-dialog">
+      <article>
+        <header>
+          <button type="button" aria-label="Close" rel="prev"
+                  onclick="this.closest('dialog').close()"></button>
+          <strong>Fit by hand</strong>
+        </header>
+        <div id="fit-dialog-content"></div>
+      </article>
+    </dialog>
+
+    <script>
+      // Unmatched children stay visible until each one is equipped or marked "Not renting".
+      (function () {
+        const report = document.getElementById("import-report");
+        const banner = document.getElementById("import-banner");
+        const pending = () => report.querySelectorAll('tr[data-status="pending"]').length;
+
+        function refreshBanner() {
+          const count = pending();
+          banner.innerHTML = count
+            ? `<mark>${count} ${count === 1 ? "child still needs" : "children still need"} equipment.</mark>`
+            : "<ins>All children handled ✅</ins>";
+        }
+
+        report.addEventListener("click", (event) => {
+          if (!event.target.matches("[data-not-renting]")) return;
+          const row = event.target.closest("tr");
+          row.dataset.status = "skipped";
+          row.lastElementChild.textContent = "Not renting.";
+          refreshBanner();
+        });
+
+        // A successful "Fit by hand" replaces the child's result cell: that row is done.
+        document.body.addEventListener("htmx:afterSwap", (event) => {
+          if (!event.detail.target.id.startsWith("import-result-")) return;
+          event.detail.target.closest("tr").dataset.status = "done";
+          document.getElementById("fit-dialog").close();
+          refreshBanner();
+        });
+
+        window.addEventListener("beforeunload", (event) => {
+          if (pending()) event.preventDefault();
+        });
+
+        refreshBanner();
+      })();
+    </script>
+  {% endif %}
+
+  <form method="post" action="{% url 'rental-import' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% include "rental/_fields.html" %}
+    <button type="submit">Import and rent</button>
+  </form>
+
+  <details>
+    <summary>CSV format</summary>
+    <p>One line per child, separated by <code>,</code> or <code>;</code>. Boot size in mondopoint;
+      <code>board</code> is <code>skis</code> or <code>snowboard</code>; <code>helmet</code> is
+      <code>yes</code> or <code>no</code>.</p>
+    <pre><code>name,height_cm,boot_size,level,board,helmet
+Emma Laurent,170,25.5,beginner,skis,yes
+Jules Fontaine,182,28.5,intermediate,snowboard,no</code></pre>
+    <p>Each child gets the closest-fitting available equipment, as recommended at the counter.
+      A child who cannot be equipped stays on the report until they are fitted by hand or
+      marked "Not renting".</p>
+  </details>
+{% endblock %}

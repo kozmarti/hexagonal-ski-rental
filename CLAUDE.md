@@ -92,6 +92,7 @@ rental/
   adapters/
     inbound/web/       # Django views + HTMX templates (call inbound ports)
     inbound/cli/       # command-line adapter (plain argparse, call inbound ports)
+    inbound/csv_import/  # group import from a CSV file (plain Python, call inbound ports)
     outbound/orm/      # Django models + ORM repositories (implement outbound ports)
     outbound/memory/   # test adapters: in-memory repositories, unit of work, FixedClock, RecordingNotifier
     outbound/price_list/     # StaticPriceList (MVP prices)

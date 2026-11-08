@@ -16,7 +16,7 @@
       </ul>
       <ul>
         <li><a href="{% url 'dashboard' %}" {% if page == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
-        <li><a href="{% url 'rentals' %}" {% if page == 'rentals' or page == 'rental-new' or page == 'rental-equipment' %}aria-current="page"{% endif %}>Rentals</a></li>
+        <li><a href="{% url 'rentals' %}" {% if page == 'rentals' or page == 'rental-new' or page == 'rental-equipment' or page == 'rental-import' or page == 'rental-import-fit' %}aria-current="page"{% endif %}>Rentals</a></li>
         <li><a href="{% url 'inventory' %}" {% if page == 'inventory' %}aria-current="page"{% endif %}>Inventory</a></li>
         <li><a href="{% url 'maintenance' %}" {% if page == 'maintenance' %}aria-current="page"{% endif %}>Maintenance</a></li>
       </ul>

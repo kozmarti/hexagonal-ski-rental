@@ -5,7 +5,10 @@
 
 {% block content %}
   <h1>Rentals</h1>
-  <p><a href="{% url 'rental-new' %}" role="button">New rental</a></p>
+  <p>
+    <a href="{% url 'rental-new' %}" role="button">New rental</a>
+    <a href="{% url 'rental-import' %}" role="button" class="secondary">Import a group</a>
+  </p>
 
   {% if returned %}
     <p><ins>Rental returned. Its items are now in maintenance.</ins></p>

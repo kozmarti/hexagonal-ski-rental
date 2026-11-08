@@ -98,7 +98,49 @@ Inbound (new ways to create rentals, all calling the same `CreateRental` port):
     The rental shows on the dashboard and the Rentals page; after the return, its items are
     on the Maintenance page.
 14. `feature/csv-import-adapter`: import a group (e.g. a ski school class arriving at the shop),
-    one `CreateRentalCommand` per line.
+    one rental per child. Plain Python adapter in `rental/adapters/inbound/csv_import/`, used by
+    an "Import a group" web page. For each line it calls existing use cases only:
+    `RegisterCustomer`, `RecommendEquipment` (closest-fitting available skis or snowboard, boots,
+    and a helmet if asked), then `CreateRental`. A wrong file rents nothing (problems listed by
+    line); a child who cannot be equipped is reported, the others are still rented.
+
+    Unmatched children stay visible until they are handled, without leaving the report:
+    - **Fit by hand** opens a modal dialog with the usual equipment choice for that child
+      (recommendation, available items, "Other available equipment"). After **Create rental**
+      the dialog closes and only that child's row is updated (equipment and price), with HTMX.
+    - **Not renting** marks the row as handled. In this branch it does not delete anything
+      (deleting the customer needs a core change, see 14b).
+    - A banner shows how many children still need equipment, and turns green once every row is
+      equipped or marked "Not renting". While rows are unresolved, leaving the page asks for
+      confirmation. Links and buttons are not disabled: the back button or closing the tab
+      would bypass a lock anyway.
+    - Core unchanged: only `CreateRental` and the other existing use cases are called.
+
+    How to try it:
+
+    ```bash
+    # 1. Start from the demo data
+    docker compose run --rm web python manage.py flush --no-input
+    docker compose run --rm web python manage.py seed_demo
+    docker compose up
+    ```
+
+    2. Open http://localhost:8000/rentals/ → **Import a group**.
+    3. Upload `examples/ski_school_group.csv` (5 children), keep today as the last day.
+    4. Expected report: **4 of 5 children equipped**, banner "1 child still needs equipment".
+       Inès (150 cm) gets "No available skis in a fitting size and range."
+    5. Click **Fit by hand** for Inès: pick skis under "Other available equipment", **Create
+       rental**. The dialog closes, her row shows the equipment, the banner turns green.
+       (Or click **Not renting**: her row is marked as handled.)
+    6. Before that, try leaving the page: the browser asks for confirmation.
+    7. The new rentals are on the dashboard and the Rentals page.
+14b. `feature/remove-customer` (core change): a new `RemoveCustomer` use case. Domain rule:
+    only a customer who never rented can be removed, so a mistake cannot erase the history of
+    a real rental. Needs a `delete` method on the `CustomerRepository` port, implemented by the
+    in-memory and ORM adapters (and covered by the repository contract tests), plus a way to
+    know whether a customer has rentals. Then **Not renting** in the group import really
+    deletes the customer, so no unused customer records are left (also better for personal
+    data). The core diff is not empty here, by design: this is a new business capability.
 15. `feature/json-api-adapter`: JSON API, e.g. for a self-service tablet in the shop.
 
 Outbound (swap the technology behind existing ports):
@@ -125,3 +167,10 @@ These need new business capabilities, so they are not pure adapter swaps:
   will then use `RentalPeriod` overlaps.
 - Staff authentication.
 - Payments and deposits, season rentals, multiple shops.
+- Customer contact and identity details: phone number, email address, postal address and
+  ID card number, recorded when the customer is registered. Needed to call a customer with
+  an overdue rental, and to identify who holds the equipment. The ID card number is personal
+  data under the GDPR: decide what is really needed, how long it is kept, and who can see it.
+- `FindCustomers` use case (search by name, later also by phone or email): a customer list,
+  finding children not fitted after a group import, and avoiding duplicate customers when a
+  group file is imported again.

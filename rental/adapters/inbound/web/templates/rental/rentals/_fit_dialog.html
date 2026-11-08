@@ -1,0 +1,36 @@
+{% load rental_tags %}
+{# Dialog content for "Fit by hand": the counter's equipment choice for one child of a group. #}
+<p>
+  Recommended range: <strong>{{ recommendation.range|capfirst }}</strong> ·
+  skis <strong>{{ recommendation.ski_length|size }}</strong> ·
+  snowboard <strong>{{ recommendation.snowboard_length|size }}</strong> ·
+  boots <strong>{{ recommendation.boot_size|size }}</strong>
+</p>
+
+<form hx-post="{% url 'rental-import-fit' customer_id %}"
+      hx-target="#import-result-{{ line }}" hx-swap="innerHTML">
+  {% csrf_token %}
+  <input type="hidden" name="line" value="{{ line }}">
+  {% for error in form.non_field_errors %}
+    <p><del>{{ error }}</del></p>
+  {% endfor %}
+  {% for error in form.equipment.errors %}
+    <p><del>{{ error }}</del></p>
+  {% endfor %}
+
+  {% include "rental/rentals/_items.html" with title="Recommended skis" items=recommendation.skis %}
+  {% include "rental/rentals/_items.html" with title="Recommended snowboards" items=recommendation.snowboards %}
+  {% include "rental/rentals/_items.html" with title="Recommended boots" items=recommendation.boots %}
+  {% include "rental/rentals/_items.html" with title="Helmets and poles" items=accessories %}
+  <details>
+    <summary>Other available equipment ({{ others|length }})</summary>
+    {% include "rental/rentals/_items.html" with title="Any range, any size" items=others %}
+  </details>
+
+  <label>
+    {{ form.end_date.label }}
+    {{ form.end_date }}
+    {% if form.end_date.errors %}<small>{{ form.end_date.errors|join:" " }}</small>{% endif %}
+  </label>
+  <button type="submit">Create rental</button>
+</form>

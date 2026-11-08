@@ -9,9 +9,16 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
+from rental.adapters.inbound.csv_import.importer import (
+    CsvFormatError,
+    GroupUseCases,
+    import_group,
+    parse,
+)
 from rental.adapters.inbound.web.forms import (
     CreateRentalForm,
     EquipmentFilterForm,
+    ImportGroupForm,
     RegisterCustomerForm,
     RegisterEquipmentForm,
     parse_ids,
@@ -43,6 +50,7 @@ from rental.domain.exceptions import (
     EquipmentNotFound,
     RentalNotFound,
 )
+from rental.domain.money import Money
 
 
 def is_htmx(request: HttpRequest) -> bool:
@@ -153,15 +161,19 @@ class ChooseEquipmentView(View):
 
     def post(self, request: HttpRequest, customer_id: UUID) -> HttpResponse:
         sections = self._sections(customer_id)
-        form = CreateRentalForm(request.POST, item_ids=sections["item_ids"])
+        form = CreateRentalForm(request.POST, item_ids=[item.id for item in sections["items"]])
         if form.is_valid():
+            command = form.to_command(customer_id)
             try:
-                result = self.create_rental().execute(form.to_command(customer_id))
+                result = self.create_rental().execute(command)
             except DomainError as error:
                 form.add_error(None, str(error))
             else:
-                return redirect(f"{reverse('rentals')}?created={result.rental_id}")
+                return self._created(request, result, command, sections)
         return self._page(request, customer_id, sections, form)
+
+    def _created(self, request, result, command, sections) -> HttpResponse:
+        return redirect(f"{reverse('rentals')}?created={result.rental_id}")
 
     def _sections(self, customer_id: UUID) -> dict:
         try:
@@ -186,7 +198,7 @@ class ChooseEquipmentView(View):
             "recommendation": recommendation,
             "accessories": accessories,
             "others": others,
-            "item_ids": [*shown_ids, *(item.id for item in others)],
+            "items": [*shown, *accessories, *others],
         }
 
     def _page(self, request, customer_id, sections, form) -> HttpResponse:
@@ -197,6 +209,91 @@ class ChooseEquipmentView(View):
             "selected": set(request.POST.getlist("equipment")),
         }
         return render(request, "rental/rentals/choose.html", context)
+
+
+class FitChildView(ChooseEquipmentView):
+    """'Fit by hand' after a group import: the counter's equipment choice, inside a dialog.
+
+    The report page stays open. On success only the child's result cell is replaced;
+    on a business error the dialog stays open and shows it.
+    """
+
+    def get(self, request: HttpRequest, customer_id: UUID) -> HttpResponse:
+        sections = self._sections(customer_id)
+        end_date = request.GET.get("end_date") or timezone.localdate()
+        form = CreateRentalForm(initial={"end_date": end_date})
+        return self._page(request, customer_id, sections, form)
+
+    def _page(self, request, customer_id, sections, form) -> HttpResponse:
+        try:
+            line = int(request.GET.get("line") or request.POST.get("line"))
+        except (TypeError, ValueError):
+            return HttpResponseBadRequest("Missing line number.")
+        context = {
+            **sections,
+            "customer_id": customer_id,
+            "form": form,
+            "line": line,
+            "selected": set(request.POST.getlist("equipment")),
+        }
+        response = render(request, "rental/rentals/_fit_dialog.html", context)
+        if request.method == "POST":
+            # The form targets the child's result cell: errors go back into the dialog instead.
+            response["HX-Retarget"] = "#fit-dialog-content"
+            response["HX-Reswap"] = "innerHTML"
+        return response
+
+    def _created(self, request, result, command, sections) -> HttpResponse:
+        by_id = {item.id: item for item in sections["items"]}
+        context = {"items": [by_id[item_id] for item_id in command.equipment_ids]}
+        context["price"] = result.price
+        return render(request, "rental/rentals/_import_result.html", context)
+
+
+class ImportGroupView(View):
+    """A ski school class arrives: one CSV line per child, one rental per child."""
+
+    register_customer: Callable[[], RegisterCustomer] | None = None
+    recommend_equipment: Callable[[], RecommendEquipment] | None = None
+    list_available_equipment: Callable[[], ListAvailableEquipment] | None = None
+    create_rental: Callable[[], CreateRental] | None = None
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        form = ImportGroupForm(initial={"end_date": timezone.localdate()})
+        return render(request, "rental/rentals/import.html", {"form": form})
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        form = ImportGroupForm(request.POST, request.FILES)
+        context = {"form": form}
+        if form.is_valid():
+            try:
+                members = parse(form.cleaned_data["file"].read().decode("utf-8-sig"))
+            except UnicodeDecodeError:
+                form.add_error("file", "The file must be a UTF-8 text file.")
+            except CsvFormatError as error:
+                for problem in error.problems:
+                    form.add_error("file", problem)
+            else:
+                end_date = form.cleaned_data["end_date"]
+                lines = import_group(members, end_date, self._use_cases())
+                context.update(self._report(lines), end_date=end_date)
+        return render(request, "rental/rentals/import.html", context)
+
+    def _use_cases(self) -> GroupUseCases:
+        return GroupUseCases(
+            register_customer=self.register_customer,
+            recommend_equipment=self.recommend_equipment,
+            list_available_equipment=self.list_available_equipment,
+            create_rental=self.create_rental,
+        )
+
+    @staticmethod
+    def _report(lines) -> dict:
+        rented = [line for line in lines if line.rental_id]
+        total = Money.zero()
+        for line in rented:
+            total = total + line.price
+        return {"lines": lines, "rented": len(rented), "total": total}
 
 
 class ReturnRentalView(View):
