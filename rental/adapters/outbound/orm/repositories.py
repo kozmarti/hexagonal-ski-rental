@@ -123,6 +123,10 @@ class DjangoCustomerRepository:
             },
         )
 
+    def delete(self, customer_id: UUID) -> None:
+        # The foreign key from rentals is PROTECT: the database refuses too if rentals exist.
+        CustomerModel.objects.filter(id=customer_id).delete()
+
 
 class DjangoRentalRepository:
     def get(self, rental_id: UUID) -> Rental:
@@ -150,6 +154,9 @@ class DjangoRentalRepository:
             RentalItemModel(rental=row, equipment_id=equipment_id, position=position)
             for position, equipment_id in enumerate(rental.equipment_ids)
         )
+
+    def has_rentals_for(self, customer_id: UUID) -> bool:
+        return RentalModel.objects.filter(customer_id=customer_id).exists()
 
     def find_active(self) -> list[Rental]:
         rows = self._rentals().filter(status=RentalStatus.ACTIVE)

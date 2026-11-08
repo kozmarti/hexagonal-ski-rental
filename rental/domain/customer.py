@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 from rental.domain.entity import Entity
-from rental.domain.exceptions import InvalidCustomer
+from rental.domain.exceptions import CustomerHasRentals, InvalidCustomer
 from rental.domain.size import Size, SizeUnit
 from rental.domain.skill_level import SkillLevel
 
@@ -39,3 +39,8 @@ class Customer(Entity):
             boot_size=boot_size,
             skill_level=skill_level,
         )
+
+    def ensure_can_be_removed(self, has_rented: bool) -> None:
+        """Only a customer who never rented can be removed: rentals are the shop's history."""
+        if has_rented:
+            raise CustomerHasRentals(f"{self.name} has rentals and cannot be removed.")
