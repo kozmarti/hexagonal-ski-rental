@@ -88,3 +88,6 @@ class InMemoryRentalRepository:
 
     def find_due_back_on(self, day: date) -> list[Rental]:
         return [rental for rental in self.find_active() if rental.period.end == day]
+
+    def find_overdue(self, today: date) -> list[Rental]:
+        return [rental for rental in self.find_active() if rental.is_overdue(today)]
