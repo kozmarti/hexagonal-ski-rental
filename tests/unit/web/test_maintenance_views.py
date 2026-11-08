@@ -10,7 +10,7 @@ from rental.application.ports.inbound.complete_maintenance import CompleteMainte
 from rental.application.ports.inbound.list_available_equipment import EquipmentView
 from rental.domain.exceptions import EquipmentNotFound, InvalidStatusTransition
 from tests.unit.factories import make_boots, make_skis
-from tests.unit.web.fakes import HTMX, Recorder, html
+from tests.unit.fakes import HTMX, Recorder, html
 
 
 def in_maintenance(item, damaged):

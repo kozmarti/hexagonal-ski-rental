@@ -7,7 +7,7 @@ from rental.adapters.inbound.web.views import DashboardView
 from rental.application.ports.inbound.get_dashboard import Dashboard, RentalView
 from rental.application.ports.inbound.list_available_equipment import EquipmentView
 from tests.unit.factories import eur, make_boots, make_skis
-from tests.unit.web.fakes import Recorder, html
+from tests.unit.fakes import Recorder, html
 
 WEDNESDAY = date(2026, 12, 23)
 

@@ -28,7 +28,7 @@ from rental.domain.exceptions import (
 from rental.domain.size import Size, SizeUnit
 from rental.domain.skill_level import SkillLevel
 from tests.unit.factories import eur, make_boots, make_helmet, make_skis
-from tests.unit.web.fakes import HTMX, Recorder, html
+from tests.unit.fakes import HTMX, Recorder, html
 
 FRIDAY = date(2026, 12, 25)
 

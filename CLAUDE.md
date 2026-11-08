@@ -91,6 +91,7 @@ rental/
     services/          # use case implementations (implement inbound ports, use outbound ports)
   adapters/
     inbound/web/       # Django views + HTMX templates (call inbound ports)
+    inbound/cli/       # command-line adapter (plain argparse, call inbound ports)
     outbound/orm/      # Django models + ORM repositories (implement outbound ports)
     outbound/memory/   # test adapters: in-memory repositories, unit of work, FixedClock, RecordingNotifier
     outbound/price_list/     # StaticPriceList (MVP prices)
@@ -99,6 +100,8 @@ rental/
   bootstrap.py         # composition root: wires outbound adapters into services
 config/                # wiring and dev tooling, outside the hexagon (may import bootstrap.py)
   urls.py              # injects the use cases from bootstrap.py into the views
+  cli.py               # injects the use cases from bootstrap.py into the CLI adapter
+  management/commands/ski_rental.py  # starts the CLI adapter
   management/commands/seed_demo.py   # demo data, created through the use cases
 ```
 
@@ -194,6 +197,8 @@ migrations are up to date, and pytest on every pull request and on pushes to `ma
 - Create migrations: `docker compose run --rm web python manage.py makemigrations`
 - Fill an empty database with demo data: `docker compose run --rm web python manage.py seed_demo`
 - Empty the database: `docker compose run --rm web python manage.py flush --no-input`
+- The counter from the terminal: `docker compose run --rm web python manage.py ski_rental --help`
+  (`available`, `customer`, `rent`, `return`)
 
 Demo and test data are always created **through the use cases** (like `seed_demo`), never with
 `loaddata` fixtures or direct table writes: the domain checks the data, and it keeps working
