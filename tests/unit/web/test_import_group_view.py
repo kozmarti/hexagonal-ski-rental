@@ -52,7 +52,8 @@ def test_unmatched_children_stay_pending_with_fit_and_not_renting_buttons(rf):
     assert 'data-status="pending"' in page
     assert "?line=2&end_date=2026-12-25" in page
     assert 'hx-target="#fit-dialog-content"' in page
-    assert "data-not-renting>Not renting</button>" in page
+    assert "/rentals/import/not-renting/" in page
+    assert "Inès will not rent: remove their customer record?" in page
     assert '<dialog id="fit-dialog">' in page
     assert "beforeunload" in page
 
@@ -65,7 +66,7 @@ def test_a_child_who_could_not_be_registered_is_not_left_pending(rf):
 
     assert 'data-status="failed"' in page
     assert "fix this line and import it again" in page
-    assert "data-not-renting>Not renting</button>" not in page
+    assert "/rentals/import/not-renting/" not in page
     assert "/rentals/import/fit/" not in page
 
 

@@ -40,7 +40,13 @@
                                 hx-on::after-request="document.getElementById('fit-dialog').showModal()">
                           Fit by hand
                         </button>
-                        <button type="button" class="secondary outline" data-not-renting>Not renting</button>
+                        <button type="button" class="secondary outline"
+                                hx-post="{% url 'rental-import-not-renting' line.customer_id %}"
+                                hx-target="#import-result-{{ line.line }}"
+                                hx-confirm="{{ line.name }} will not rent: remove their customer record?"
+                                hx-on::response-error="alert(event.detail.xhr.responseText)">
+                          Not renting
+                        </button>
                       </div>
                     {% else %}
                       <small>Not registered: fix this line and import it again.</small>
@@ -80,15 +86,8 @@
             : "<ins>All children handled ✅</ins>";
         }
 
-        report.addEventListener("click", (event) => {
-          if (!event.target.matches("[data-not-renting]")) return;
-          const row = event.target.closest("tr");
-          row.dataset.status = "skipped";
-          row.lastElementChild.textContent = "Not renting.";
-          refreshBanner();
-        });
-
-        // A successful "Fit by hand" replaces the child's result cell: that row is done.
+        // A successful "Fit by hand" or "Not renting" replaces the child's result cell:
+        // that row is handled.
         document.body.addEventListener("htmx:afterSwap", (event) => {
           if (!event.detail.target.id.startsWith("import-result-")) return;
           event.detail.target.closest("tr").dataset.status = "done";

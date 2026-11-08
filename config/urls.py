@@ -58,6 +58,11 @@ urlpatterns = [
         name="rental-import-fit",
     ),
     path(
+        "rentals/import/not-renting/<uuid:customer_id>/",
+        views.NotRentingView.as_view(remove_customer=bootstrap.remove_customer),
+        name="rental-import-not-renting",
+    ),
+    path(
         "rentals/<uuid:rental_id>/return/",
         views.ReturnRentalView.as_view(return_rental=bootstrap.return_rental),
         name="rental-return",

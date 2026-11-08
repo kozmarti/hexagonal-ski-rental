@@ -65,6 +65,9 @@ class InMemoryCustomerRepository:
     def save(self, customer: Customer) -> None:
         self._customers[customer.id] = deepcopy(customer)
 
+    def delete(self, customer_id: UUID) -> None:
+        self._customers.pop(customer_id, None)
+
 
 class InMemoryRentalRepository:
     def __init__(self) -> None:
@@ -78,6 +81,9 @@ class InMemoryRentalRepository:
 
     def save(self, rental: Rental) -> None:
         self._rentals[rental.id] = deepcopy(rental)
+
+    def has_rentals_for(self, customer_id: UUID) -> bool:
+        return any(rental.customer_id == customer_id for rental in self._rentals.values())
 
     def find_active(self) -> list[Rental]:
         return [

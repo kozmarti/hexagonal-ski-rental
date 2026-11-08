@@ -138,9 +138,20 @@ Inbound (new ways to create rentals, all calling the same `CreateRental` port):
     only a customer who never rented can be removed, so a mistake cannot erase the history of
     a real rental. Needs a `delete` method on the `CustomerRepository` port, implemented by the
     in-memory and ORM adapters (and covered by the repository contract tests), plus a way to
-    know whether a customer has rentals. Then **Not renting** in the group import really
-    deletes the customer, so no unused customer records are left (also better for personal
-    data). The core diff is not empty here, by design: this is a new business capability.
+    know whether a customer has rentals (`RentalRepository.has_rentals_for`). Then **Not
+    renting** in the group import really deletes the customer, after a confirmation, so no
+    unused customer records are left (also better for personal data). The core diff is not
+    empty here, by design: this is a new business capability.
+
+    How to try it:
+
+    1. Same start as step 14: `flush --no-input`, `seed_demo`, `docker compose up`, then
+       upload `examples/ski_school_group.csv` under Rentals → **Import a group**.
+    2. For Inès, click **Not renting** and confirm: her cell becomes "Not renting. Customer
+       removed." and the banner turns green.
+    3. Her customer record is gone: the "Fit by hand" link for her would now be a 404.
+    4. The rule is checked by the domain: a customer who rented can never be removed
+       (covered by `tests/unit/application/test_remove_customer.py`).
 15. `feature/json-api-adapter`: JSON API, e.g. for a self-service tablet in the shop.
 
 Outbound (swap the technology behind existing ports):
@@ -153,9 +164,18 @@ Outbound (swap the technology behind existing ports):
     The core diff only shows **new** files (the new use cases); existing services and
     `PricingPolicy` stay unchanged.
 
-## Phase 5: CD (to discuss at the end)
+## Phase 5: Design (at the end)
 
-19. `chore/cd`
+19. `feature/design`: one pass over the look of every screen, web adapter only (core unchanged).
+    Includes:
+    - Totals at the top of the lists: Rentals ("3 active rentals · 1 due back today ·
+      1 overdue"), Inventory ("25 items available", following the filters), and on the
+      dashboard in each section title ("Overdue (1)", "Due back today (1)",
+      "In maintenance (4, 1 to repair)").
+
+## Phase 6: CD (to discuss at the end)
+
+20. `chore/cd`
     Deploy the app automatically from `main` (hosting target to decide), so the README
     can link to a live demo.
 
@@ -174,3 +194,13 @@ These need new business capabilities, so they are not pure adapter swaps:
 - `FindCustomers` use case (search by name, later also by phone or email): a customer list,
   finding children not fitted after a group import, and avoiding duplicate customers when a
   group file is imported again.
+- Ski boots and snowboard boots as two different kinds of equipment. Today they are one
+  `BOOTS` type everywhere, but they are not interchangeable: a ski boot clips into a ski
+  binding, a snowboard boot into a board binding. Touches the whole app:
+  - Domain: `SKI_BOOTS` and `SNOWBOARD_BOOTS` types (both sized in mondopoint, both ranged);
+    the recommendation suggests the boots matching the board; the package discount becomes
+    "skis + ski boots" or "snowboard + snowboard boots"; a rental should not mix a snowboard
+    with ski boots.
+  - Price list: separate prices for each kind of boots.
+  - ORM: a data migration turning existing `boots` into one of the two types.
+  - Screens, CLI, CSV import and demo data: the two kinds shown and chosen separately.

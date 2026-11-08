@@ -42,6 +42,10 @@ from rental.application.ports.inbound.recommend_equipment import (
 )
 from rental.application.ports.inbound.register_customer import RegisterCustomer
 from rental.application.ports.inbound.register_equipment import RegisterEquipment
+from rental.application.ports.inbound.remove_customer import (
+    RemoveCustomer,
+    RemoveCustomerCommand,
+)
 from rental.application.ports.inbound.return_rental import ReturnRental, ReturnRentalCommand
 from rental.domain.equipment import EquipmentType
 from rental.domain.exceptions import (
@@ -248,6 +252,22 @@ class FitChildView(ChooseEquipmentView):
         context = {"items": [by_id[item_id] for item_id in command.equipment_ids]}
         context["price"] = result.price
         return render(request, "rental/rentals/_import_result.html", context)
+
+
+class NotRentingView(View):
+    """'Not renting' after a group import: the child's customer record is removed."""
+
+    remove_customer: Callable[[], RemoveCustomer] | None = None
+
+    def post(self, request: HttpRequest, customer_id: UUID) -> HttpResponse:
+        try:
+            self.remove_customer().execute(RemoveCustomerCommand(customer_id))
+        except CustomerNotFound:
+            raise Http404("Unknown customer.") from None
+        except DomainError as error:
+            # Not swapped by HTMX (4xx): the row stays pending and the message is shown.
+            return HttpResponse(str(error), status=409)
+        return render(request, "rental/rentals/_not_renting.html")
 
 
 class ImportGroupView(View):

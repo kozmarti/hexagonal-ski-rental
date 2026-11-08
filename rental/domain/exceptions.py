@@ -58,5 +58,9 @@ class CustomerNotFound(DomainError):
     pass
 
 
+class CustomerHasRentals(DomainError):
+    pass
+
+
 class RentalNotFound(DomainError):
     pass

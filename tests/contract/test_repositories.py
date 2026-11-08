@@ -144,6 +144,17 @@ class TestCustomerRepository:
         with pytest.raises(CustomerNotFound):
             repos.customers.get(uuid4())
 
+    def test_deleted_customer_is_gone(self, repos):
+        customer, other = make_customer(), make_customer()
+        repos.customers.save(customer)
+        repos.customers.save(other)
+
+        repos.customers.delete(customer.id)
+
+        with pytest.raises(CustomerNotFound):
+            repos.customers.get(customer.id)
+        assert repos.customers.get(other.id) == other
+
 
 class TestRentalRepository:
     def test_saved_rental_can_be_read_back_with_its_items_in_order(self, repos):
@@ -162,6 +173,18 @@ class TestRentalRepository:
         repos.rentals.save(rental)
 
         assert same_fields(repos.rentals.get(rental.id), rental)
+
+    def test_has_rentals_for_counts_active_and_returned_rentals(self, repos):
+        skis = make_skis()
+        rental = stored_rental(repos, [skis])
+        newcomer = make_customer()
+        repos.customers.save(newcomer)
+
+        assert repos.rentals.has_rentals_for(rental.customer_id)
+        rental.close([skis], today=FRIDAY)
+        repos.rentals.save(rental)
+        assert repos.rentals.has_rentals_for(rental.customer_id)
+        assert not repos.rentals.has_rentals_for(newcomer.id)
 
     def test_unknown_rental_is_not_found(self, repos):
         with pytest.raises(RentalNotFound):

@@ -19,6 +19,7 @@ from rental.application.ports.inbound.list_equipment_in_maintenance import (
 from rental.application.ports.inbound.recommend_equipment import RecommendEquipment
 from rental.application.ports.inbound.register_customer import RegisterCustomer
 from rental.application.ports.inbound.register_equipment import RegisterEquipment
+from rental.application.ports.inbound.remove_customer import RemoveCustomer
 from rental.application.ports.inbound.return_rental import ReturnRental
 from rental.application.services.complete_maintenance import CompleteMaintenanceService
 from rental.application.services.create_rental import CreateRentalService
@@ -30,6 +31,7 @@ from rental.application.services.list_equipment_in_maintenance import (
 from rental.application.services.recommend_equipment import RecommendEquipmentService
 from rental.application.services.register_customer import RegisterCustomerService
 from rental.application.services.register_equipment import RegisterEquipmentService
+from rental.application.services.remove_customer import RemoveCustomerService
 from rental.application.services.return_rental import ReturnRentalService
 
 
@@ -43,6 +45,12 @@ def list_available_equipment() -> ListAvailableEquipment:
 
 def register_customer() -> RegisterCustomer:
     return RegisterCustomerService(DjangoCustomerRepository(), DjangoUnitOfWork())
+
+
+def remove_customer() -> RemoveCustomer:
+    return RemoveCustomerService(
+        DjangoCustomerRepository(), DjangoRentalRepository(), DjangoUnitOfWork()
+    )
 
 
 def recommend_equipment() -> RecommendEquipment:

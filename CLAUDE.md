@@ -36,6 +36,8 @@ a rental always starts today (no booking in advance for a future period).
   but availability does not rely on it yet.
 - Equipment lifecycle: `AVAILABLE → RENTED → MAINTENANCE → AVAILABLE`;
   any state can go `→ RETIRED`.
+- Only a customer who **never rented** can be removed (`Customer.ensure_can_be_removed`):
+  rentals, active or returned, are the shop's history.
 - A rental is **overdue** when it is still active after its last day. Overdue is computed
   from today's date (`Rental.is_overdue(today)`), never stored as a status.
 - Every returned item goes to maintenance (waxing, sharpening, drying) before it can be
@@ -111,7 +113,7 @@ Code inside `rental/` never imports `bootstrap.py`; only `config/` does.
 ### Ports
 
 - **Inbound** (what the app offers): `RegisterEquipment`, `ListAvailableEquipment`,
-  `RegisterCustomer`, `RecommendEquipment`, `CreateRental`, `ReturnRental`,
+  `RegisterCustomer`, `RemoveCustomer`, `RecommendEquipment`, `CreateRental`, `ReturnRental`,
   `ListEquipmentInMaintenance`, `CompleteMaintenance`, `GetDashboard`.
 - **Outbound** (what the app needs): `EquipmentRepository`, `RentalRepository`,
   `CustomerRepository`, `PriceListRepository`, `Clock`, `Notifier`, `UnitOfWork` (when atomic multi-entity writes are needed).
