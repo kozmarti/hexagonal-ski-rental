@@ -57,11 +57,13 @@ Each step includes view tests (the view calls the right use case and renders its
 
 **MVP is complete here.**
 
-## Phase 3b: CD
+## Phase 3b: Demo data
 
-12b. `chore/cd`
-     Deploy the app automatically from `main` (hosting target to decide), so the README
-     can link to a live demo.
+12b. `chore/demo-data`
+     `seed_demo` command filling an empty database with demo equipment, customers and
+     rentals in every state (out, due back today, overdue, returned with a repair or a service).
+     Everything is created through the use cases. Lives in `config/` (dev tooling, outside
+     the hexagon). Integration test.
 
 ## Phase 4: Demonstration (swap and add adapters, core unchanged)
 
@@ -90,6 +92,12 @@ Outbound (swap the technology behind existing ports):
     and a web screen to view and edit prices. Use case tests + ORM adapter integration tests.
     The core diff only shows **new** files (the new use cases); existing services and
     `PricingPolicy` stay unchanged.
+
+## Phase 5: CD (to discuss at the end)
+
+19. `chore/cd`
+    Deploy the app automatically from `main` (hosting target to decide), so the README
+    can link to a live demo.
 
 ## Later (business changes, the core will change)
 

@@ -97,8 +97,12 @@ rental/
     outbound/clock.py        # SystemClock (today in the shop's time zone)
     outbound/notifications/  # LoggingNotifier (later: EmailNotifier, SmsNotifier, ...)
   bootstrap.py         # composition root: wires outbound adapters into services
-config/urls.py         # injects the use cases from bootstrap.py into the views
+config/                # wiring and dev tooling, outside the hexagon (may import bootstrap.py)
+  urls.py              # injects the use cases from bootstrap.py into the views
+  management/commands/seed_demo.py   # demo data, created through the use cases
 ```
+
+Code inside `rental/` never imports `bootstrap.py`; only `config/` does.
 
 ### Ports
 
@@ -188,6 +192,12 @@ Everything runs in Docker (Python 3.12 + PostgreSQL 16). First time: `cp .env.ex
 CI (GitHub Actions, `.github/workflows/ci.yml`) runs ruff, lint-imports, a check that
 migrations are up to date, and pytest on every pull request and on pushes to `main`.
 - Create migrations: `docker compose run --rm web python manage.py makemigrations`
+- Fill an empty database with demo data: `docker compose run --rm web python manage.py seed_demo`
+- Empty the database: `docker compose run --rm web python manage.py flush --no-input`
+
+Demo and test data are always created **through the use cases** (like `seed_demo`), never with
+`loaddata` fixtures or direct table writes: the domain checks the data, and it keeps working
+when the database adapter changes.
 
 Django apps are the adapters themselves: `rental.adapters.outbound.orm` (models, migrations)
 and `rental.adapters.inbound.web` (views, templates). The core is not a Django app.

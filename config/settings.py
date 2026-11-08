@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     # Django only knows about the adapters, never the core.
     "rental.adapters.outbound.orm.apps.OrmConfig",
     "rental.adapters.inbound.web.apps.WebConfig",
+    "config.apps.DevToolsConfig",
 ]
 
 MIDDLEWARE = [
