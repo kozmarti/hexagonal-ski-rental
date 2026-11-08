@@ -28,31 +28,14 @@ from rental.domain.exceptions import (
 from rental.domain.size import Size, SizeUnit
 from rental.domain.skill_level import SkillLevel
 from tests.unit.factories import eur, make_boots, make_helmet, make_skis
+from tests.unit.web.fakes import HTMX, Recorder, html
 
-HTMX = {"HX-Request": "true"}
 FRIDAY = date(2026, 12, 25)
 
 SKIS = EquipmentView.from_entity(make_skis())
 BOOTS = EquipmentView.from_entity(make_boots())
 HELMET = EquipmentView.from_entity(make_helmet())
 PREMIUM_SKIS = EquipmentView.from_entity(make_skis(Range.PREMIUM))
-
-
-def html(response) -> str:
-    return response.content.decode()
-
-
-class Recorder:
-    """A fake use case: records its inputs and returns a fixed result, or raises."""
-
-    def __init__(self, result=None, error=None):
-        self.result, self.error, self.calls = result, error, []
-
-    def execute(self, *args):
-        self.calls.append(args[0] if args else None)
-        if self.error:
-            raise self.error
-        return self.result
 
 
 class FakeListAvailableEquipment:
