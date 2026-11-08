@@ -16,3 +16,9 @@ def size(value: Size) -> str:
 def money(value: Money) -> str:
     """180.00 EUR."""
     return f"{value.amount} {value.currency}"
+
+
+@register.filter
+def needing_repair(items):
+    """The items flagged for repair, from a list of EquipmentView."""
+    return [item for item in items if item.needs_repair]

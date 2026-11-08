@@ -49,8 +49,14 @@ def is_htmx(request: HttpRequest) -> bool:
     return request.headers.get("HX-Request") == "true"
 
 
-def home(request):
-    return render(request, "rental/home.html")
+class DashboardView(View):
+    """The home page: what is out, due back today, overdue and in maintenance."""
+
+    get_dashboard: Callable[[], GetDashboard] | None = None
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        context = {"dashboard": self.get_dashboard().execute()}
+        return render(request, "rental/dashboard.html", context)
 
 
 class InventoryView(View):

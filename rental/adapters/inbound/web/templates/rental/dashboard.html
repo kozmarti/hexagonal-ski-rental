@@ -1,0 +1,67 @@
+{% extends "rental/base.html" %}
+{% load rental_tags %}
+
+{% block title %}Dashboard · Ski Rental{% endblock %}
+
+{% block content %}
+  {# Refreshes itself every minute, so a screen left open at the counter stays up to date. #}
+  <div id="dashboard" hx-get="{% url 'dashboard' %}" hx-trigger="every 60s"
+       hx-select="#dashboard" hx-swap="outerHTML">
+    <h1>Today: {{ dashboard.today|date:"l j F" }}</h1>
+
+    <div class="grid">
+      <article>
+        <header>Out</header>
+        <h2>{{ dashboard.active_rentals|length }}</h2>
+      </article>
+      <article>
+        <header>Due back today</header>
+        <h2>{{ dashboard.due_back_today|length }}</h2>
+      </article>
+      <article>
+        <header>Overdue</header>
+        <h2>{% if dashboard.overdue %}<mark>{{ dashboard.overdue|length }}</mark>{% else %}0{% endif %}</h2>
+      </article>
+      <article>
+        <header>In maintenance</header>
+        <h2>{{ dashboard.in_maintenance|length }}</h2>
+        {% with repairs=dashboard.in_maintenance|needing_repair %}
+          {% if repairs %}<small>🔧 {{ repairs|length }} to repair</small>{% endif %}
+        {% endwith %}
+      </article>
+    </div>
+
+    {% if dashboard.overdue %}
+      <section>
+        <h2>Overdue</h2>
+        {% include "rental/_rental_rows.html" with rentals=dashboard.overdue late=True %}
+      </section>
+    {% endif %}
+
+    <section>
+      <h2>Due back today</h2>
+      {% if dashboard.due_back_today %}
+        {% include "rental/_rental_rows.html" with rentals=dashboard.due_back_today %}
+      {% else %}
+        <p>Nothing due back today.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>In maintenance</h2>
+      {% if dashboard.in_maintenance %}
+        <ul>
+          {% for item in dashboard.in_maintenance %}
+            <li>
+              {% if item.needs_repair %}<mark>🔧 Repair</mark>{% else %}Service{% endif %}:
+              {{ item.type|capfirst }} {{ item.brand }} {{ item.model }}, {{ item.size|size }}
+            </li>
+          {% endfor %}
+        </ul>
+        <p><a href="{% url 'maintenance' %}">Go to maintenance</a></p>
+      {% else %}
+        <p>Nothing to service.</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

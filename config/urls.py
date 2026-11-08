@@ -6,7 +6,11 @@ from rental import bootstrap
 from rental.adapters.inbound.web import views
 
 urlpatterns = [
-    path("", views.home, name="home"),
+    path(
+        "",
+        views.DashboardView.as_view(get_dashboard=bootstrap.get_dashboard),
+        name="dashboard",
+    ),
     path(
         "inventory/",
         views.InventoryView.as_view(
