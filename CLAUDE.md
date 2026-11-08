@@ -94,8 +94,10 @@ rental/
     outbound/orm/      # Django models + ORM repositories (implement outbound ports)
     outbound/memory/   # test adapters: in-memory repositories, unit of work, FixedClock, RecordingNotifier
     outbound/price_list/     # StaticPriceList (MVP prices)
+    outbound/clock.py        # SystemClock (today in the shop's time zone)
     outbound/notifications/  # LoggingNotifier (later: EmailNotifier, SmsNotifier, ...)
-  bootstrap.py         # composition root: wires adapters into services
+  bootstrap.py         # composition root: wires outbound adapters into services
+config/urls.py         # injects the use cases from bootstrap.py into the views
 ```
 
 ### Ports
@@ -130,7 +132,11 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
 - Never call `date.today()` / `datetime.now()` in the core; use the `Clock` port.
 - The `Notifier` port receives domain-level notifications (e.g. a `RentalCreated` dataclass),
   never pre-formatted messages. Formatting belongs in the adapter.
-- Views never build adapters; they get use cases from `bootstrap.py`.
+- Views never build adapters and never import `bootstrap.py`. Each view **receives** its use
+  cases (inbound ports) by injection, e.g. `DashboardView.as_view(get_dashboard=bootstrap.get_dashboard)`.
+  This wiring lives in `config/urls.py`, outside the hexagon, so inbound adapters only know ports
+  and the "inbound and outbound adapters are independent" import-linter rule stays strict
+  (no ignored imports).
 - Business rules belong in the domain, not in views, forms or ORM models.
 - Domain errors are raised as domain exceptions; inbound adapters translate them
   into HTTP responses / messages.
@@ -157,8 +163,12 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
 - **Domain + use cases**: plain pytest with in-memory adapters, `StaticPriceList`, `FixedClock`
   and `RecordingNotifier`.
   No database. These are the majority of the tests.
-- **ORM adapters**: a small number of pytest-django integration tests.
+- **Repository contracts** (`tests/contract/`): one set of tests runs against every adapter
+  of the repository ports (in-memory and ORM). A new repository adapter must pass them too.
+  Compare entities with all their fields, not only by id.
+- **ORM adapters**: a small number of pytest-django integration tests (unit of work, bootstrap).
 - **Web adapters**: a few tests checking that views call the right use case and render results.
+  Inject a fake use case into the view, so these tests need no database.
 
 ## Commands
 
@@ -170,8 +180,8 @@ Everything runs in Docker (Python 3.12 + PostgreSQL 16). First time: `cp .env.ex
 - Lint: `docker compose run --rm web ruff check .`
 - Format: `docker compose run --rm web ruff format .` (CI runs `ruff format --check .`)
 
-CI (GitHub Actions, `.github/workflows/ci.yml`) runs ruff, lint-imports and pytest
-on every pull request and on pushes to `main`.
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs ruff, lint-imports, a check that
+migrations are up to date, and pytest on every pull request and on pushes to `main`.
 - Create migrations: `docker compose run --rm web python manage.py makemigrations`
 
 Django apps are the adapters themselves: `rental.adapters.outbound.orm` (models, migrations)
