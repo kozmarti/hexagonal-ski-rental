@@ -39,4 +39,16 @@ urlpatterns = [
         views.ReturnRentalView.as_view(return_rental=bootstrap.return_rental),
         name="rental-return",
     ),
+    path(
+        "maintenance/",
+        views.MaintenanceView.as_view(
+            list_equipment_in_maintenance=bootstrap.list_equipment_in_maintenance
+        ),
+        name="maintenance",
+    ),
+    path(
+        "maintenance/<uuid:equipment_id>/done/",
+        views.CompleteMaintenanceView.as_view(complete_maintenance=bootstrap.complete_maintenance),
+        name="maintenance-done",
+    ),
 ]

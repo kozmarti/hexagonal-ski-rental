@@ -16,11 +16,18 @@ from rental.adapters.inbound.web.forms import (
     RegisterEquipmentForm,
     parse_ids,
 )
+from rental.application.ports.inbound.complete_maintenance import (
+    CompleteMaintenance,
+    CompleteMaintenanceCommand,
+)
 from rental.application.ports.inbound.create_rental import CreateRental
 from rental.application.ports.inbound.get_dashboard import GetDashboard
 from rental.application.ports.inbound.list_available_equipment import (
     ListAvailableEquipment,
     ListAvailableEquipmentQuery,
+)
+from rental.application.ports.inbound.list_equipment_in_maintenance import (
+    ListEquipmentInMaintenance,
 )
 from rental.application.ports.inbound.recommend_equipment import (
     RecommendEquipment,
@@ -30,7 +37,12 @@ from rental.application.ports.inbound.register_customer import RegisterCustomer
 from rental.application.ports.inbound.register_equipment import RegisterEquipment
 from rental.application.ports.inbound.return_rental import ReturnRental, ReturnRentalCommand
 from rental.domain.equipment import EquipmentType
-from rental.domain.exceptions import CustomerNotFound, DomainError, RentalNotFound
+from rental.domain.exceptions import (
+    CustomerNotFound,
+    DomainError,
+    EquipmentNotFound,
+    RentalNotFound,
+)
 
 
 def is_htmx(request: HttpRequest) -> bool:
@@ -201,3 +213,34 @@ class ReturnRentalView(View):
         if is_htmx(request):
             return render(request, "rental/rentals/_returned.html", {"result": result})
         return redirect(f"{reverse('rentals')}?returned={result.rental_id}")
+
+
+class MaintenanceView(View):
+    """Items waiting for maintenance, repairs first."""
+
+    list_equipment_in_maintenance: Callable[[], ListEquipmentInMaintenance] | None = None
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        context = {
+            "items": self.list_equipment_in_maintenance().execute(),
+            "done": _uuid_param(request, "done"),
+        }
+        return render(request, "rental/maintenance/list.html", context)
+
+
+class CompleteMaintenanceView(View):
+    complete_maintenance: Callable[[], CompleteMaintenance] | None = None
+
+    def post(self, request: HttpRequest, equipment_id: UUID) -> HttpResponse:
+        try:
+            self.complete_maintenance().execute(CompleteMaintenanceCommand(equipment_id))
+        except EquipmentNotFound:
+            raise Http404("Unknown equipment.") from None
+        except DomainError as error:
+            if is_htmx(request):
+                return render(request, "rental/maintenance/_row_error.html", {"error": error})
+            return HttpResponseBadRequest(str(error))
+
+        if is_htmx(request):
+            return render(request, "rental/maintenance/_done.html")
+        return redirect(f"{reverse('maintenance')}?done={equipment_id}")
