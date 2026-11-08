@@ -26,6 +26,7 @@ class EquipmentView:
     size: Size
     range: Range | None
     days_used: int
+    needs_repair: bool
 
     @classmethod
     def from_entity(cls, equipment: Equipment) -> EquipmentView:
@@ -37,6 +38,7 @@ class EquipmentView:
             size=equipment.size,
             range=equipment.range,
             days_used=equipment.days_used,
+            needs_repair=equipment.needs_repair,
         )
 
 

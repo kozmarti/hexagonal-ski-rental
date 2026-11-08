@@ -31,7 +31,7 @@ domain → ports (in and out) → services → outbound adapters → inbound ada
    Services (availability, pricing by range, damage → maintenance, notifications) + tests.
 
 5. `feature/maintenance-use-cases`
-   Inbound port: `CompleteMaintenance`. Service + tests.
+   Inbound ports: `ListEquipmentInMaintenance`, `CompleteMaintenance`. Services + tests.
 
 6. `feature/dashboard-use-case`
    Inbound port: `GetDashboard` (currently rented, due back today, in maintenance). Service + tests.
@@ -52,7 +52,7 @@ Each step includes view tests (the view calls the right use case and renders its
 9.  `feature/web-inventory`: inventory screens → `RegisterEquipment`, `ListAvailableEquipment`
 10. `feature/web-rentals`: counter screen → `RegisterCustomer`, `RecommendEquipment`,
     `CreateRental`, `ReturnRental`
-11. `feature/web-maintenance`: maintenance list → `CompleteMaintenance`
+11. `feature/web-maintenance`: maintenance list → `ListEquipmentInMaintenance`, `CompleteMaintenance`
 12. `feature/web-dashboard`: dashboard → `GetDashboard`
 
 **MVP is complete here.**

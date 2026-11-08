@@ -100,7 +100,7 @@ rental/
 
 - **Inbound** (what the app offers): `RegisterEquipment`, `ListAvailableEquipment`,
   `RegisterCustomer`, `RecommendEquipment`, `CreateRental`, `ReturnRental`,
-  `CompleteMaintenance`, `GetDashboard`.
+  `ListEquipmentInMaintenance`, `CompleteMaintenance`, `GetDashboard`.
 - **Outbound** (what the app needs): `EquipmentRepository`, `RentalRepository`,
   `CustomerRepository`, `PriceListRepository`, `Clock`, `Notifier`, `UnitOfWork` (when atomic multi-entity writes are needed).
 
