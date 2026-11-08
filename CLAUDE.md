@@ -36,6 +36,8 @@ a rental always starts today (no booking in advance for a future period).
   but availability does not rely on it yet.
 - Equipment lifecycle: `AVAILABLE → RENTED → MAINTENANCE → AVAILABLE`;
   any state can go `→ RETIRED`.
+- A rental is **overdue** when it is still active after its last day. Overdue is computed
+  from today's date (`Rental.is_overdue(today)`), never stored as a status.
 - Every returned item goes to maintenance (waxing, sharpening, drying) before it can be
   rented again. A damaged item is also flagged as needing repair; completing maintenance
   clears the flag.
@@ -66,7 +68,7 @@ a rental always starts today (no booking in advance for a future period).
    period starting today, price).
 4. Return a rental: every item goes to maintenance, damaged items are flagged for repair.
 5. Complete maintenance (item goes back to available).
-6. Dashboard: currently rented, due back today, in maintenance.
+6. Dashboard: currently rented, due back today, overdue, in maintenance.
 7. Notifications through the `Notifier` port, with a **logging adapter only** (no external service).
    Events: rental created, rental returned, item sent to maintenance, maintenance completed.
 

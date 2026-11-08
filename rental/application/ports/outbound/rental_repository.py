@@ -17,3 +17,7 @@ class RentalRepository(Protocol):
     def find_due_back_on(self, day: date) -> list[Rental]:
         """Active rentals whose last day is the given day."""
         ...
+
+    def find_overdue(self, today: date) -> list[Rental]:
+        """Active rentals whose last day is before today."""
+        ...

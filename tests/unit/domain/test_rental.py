@@ -72,6 +72,21 @@ def test_closing_a_rental_sends_every_item_to_maintenance():
     assert skis.days_used == 3
 
 
+def test_rental_is_overdue_only_after_its_last_day():
+    rental = open_rental([make_skis()])
+
+    assert not rental.is_overdue(today=FRIDAY)
+    assert rental.is_overdue(today=date(2026, 12, 26))
+
+
+def test_returned_rental_is_never_overdue():
+    skis = make_skis()
+    rental = open_rental([skis])
+    rental.close([skis], today=FRIDAY)
+
+    assert not rental.is_overdue(today=date(2026, 12, 30))
+
+
 def test_rental_cannot_be_closed_twice():
     skis = make_skis()
     rental = open_rental([skis])

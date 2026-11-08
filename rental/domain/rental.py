@@ -62,6 +62,10 @@ class Rental(Entity):
             price=price,
         )
 
+    def is_overdue(self, today: date) -> bool:
+        """Still out after its last day. Computed from the date, never stored as a status."""
+        return self.status is RentalStatus.ACTIVE and self.period.end < today
+
     def close(
         self,
         equipment: Sequence[Equipment],

@@ -122,3 +122,10 @@ class TestRentalRepository:
         repository = saved(InMemoryRentalRepository(), due_wednesday, due_friday)
 
         assert repository.find_due_back_on(WEDNESDAY) == [due_wednesday]
+
+    def test_find_overdue(self):
+        due_wednesday, due_friday = open_rental(end=WEDNESDAY), open_rental(end=FRIDAY)
+        repository = saved(InMemoryRentalRepository(), due_wednesday, due_friday)
+
+        assert repository.find_overdue(WEDNESDAY) == []
+        assert repository.find_overdue(date(2026, 12, 24)) == [due_wednesday]
