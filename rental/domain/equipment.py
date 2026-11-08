@@ -37,6 +37,11 @@ class EquipmentStatus(StrEnum):
 RANGED_TYPES = frozenset({EquipmentType.SKIS, EquipmentType.SNOWBOARD, EquipmentType.BOOTS})
 
 
+def size_unit_for(type: EquipmentType) -> SizeUnit:
+    """Boots are sized in mondopoint, everything else in centimeters."""
+    return SizeUnit.MONDOPOINT if type is EquipmentType.BOOTS else SizeUnit.CM
+
+
 @dataclass(eq=False)
 class Equipment(Entity):
     type: EquipmentType
@@ -51,7 +56,7 @@ class Equipment(Entity):
     def __post_init__(self) -> None:
         if not self.brand.strip() or not self.model.strip():
             raise InvalidEquipment("Brand and model are required.")
-        expected_unit = SizeUnit.MONDOPOINT if self.type is EquipmentType.BOOTS else SizeUnit.CM
+        expected_unit = size_unit_for(self.type)
         if self.size.unit is not expected_unit:
             raise InvalidEquipment(f"{self.type} size must be in {expected_unit}.")
         if self.type in RANGED_TYPES and self.range is None:
