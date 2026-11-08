@@ -1,0 +1,30 @@
+<div id="equipment-list" class="overflow-auto"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% if items %}
+    <table class="striped">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Brand</th>
+          <th>Model</th>
+          <th>Size</th>
+          <th>Range</th>
+          <th>Days used</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+          <tr>
+            <td>{{ item.type|capfirst }}</td>
+            <td>{{ item.brand }}</td>
+            <td>{{ item.model }}</td>
+            <td>{{ item.size.value|floatformat:"-1" }} {{ item.size.unit }}</td>
+            <td>{% if item.range %}{{ item.range|capfirst }}{% else %}—{% endif %}</td>
+            <td>{{ item.days_used }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No available equipment.</p>
+  {% endif %}
+</div>

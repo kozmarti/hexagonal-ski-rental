@@ -1,0 +1,3 @@
+{# HTMX answer after a successful registration: a fresh form, plus the refreshed list (out of band). #}
+{% include "rental/inventory/_form.html" %}
+{% include "rental/inventory/_list.html" with oob=True %}

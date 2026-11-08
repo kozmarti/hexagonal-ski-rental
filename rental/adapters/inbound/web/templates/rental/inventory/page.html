@@ -1,0 +1,26 @@
+{% extends "rental/base.html" %}
+
+{% block title %}Inventory · Ski Rental{% endblock %}
+
+{% block content %}
+  <h1>Inventory</h1>
+
+  <section>
+    <h2>Available equipment</h2>
+    <form method="get" action="{% url 'inventory' %}"
+          hx-get="{% url 'inventory' %}" hx-target="#equipment-list" hx-swap="outerHTML"
+          hx-trigger="change" hx-push-url="true">
+      <fieldset role="group">
+        {{ filters.type }}
+        {{ filters.range }}
+        <noscript><button type="submit">Filter</button></noscript>
+      </fieldset>
+    </form>
+    {% include "rental/inventory/_list.html" %}
+  </section>
+
+  <section>
+    <h2>Add equipment</h2>
+    {% include "rental/inventory/_form.html" %}
+  </section>
+{% endblock %}

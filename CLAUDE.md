@@ -113,6 +113,11 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
 ### Adapters
 
 - **Inbound**: Django + HTMX views for shop staff.
+  - Styling: Pico.css (CDN), top menu bar in `base.html`; each new screen adds its link there.
+  - Django forms only parse and check the input format, then build the command
+    (`form.to_command()`). Domain errors are caught in the view and shown on the form.
+  - Every page works without JavaScript (normal GET/POST, redirect after a successful POST).
+    With HTMX, the view returns only the changed fragment (`_*.html` templates).
 - **Outbound**:
   - Repositories: Django ORM (production), in-memory (tests). In-memory repositories store
     copies, so a change is only kept when `save()` is called, like a real database.

@@ -1,12 +1,18 @@
 import pytest
 
-from rental.domain.equipment import Equipment, EquipmentStatus, EquipmentType, Range
+from rental.domain.equipment import (
+    Equipment,
+    EquipmentStatus,
+    EquipmentType,
+    Range,
+    size_unit_for,
+)
 from rental.domain.exceptions import (
     EquipmentNotAvailable,
     InvalidEquipment,
     InvalidStatusTransition,
 )
-from rental.domain.size import Size
+from rental.domain.size import Size, SizeUnit
 from tests.unit.factories import make_helmet, make_skis
 
 
@@ -16,6 +22,12 @@ def test_registered_equipment_is_available_with_its_own_id():
     assert first.status is EquipmentStatus.AVAILABLE
     assert first.days_used == 0
     assert first != second
+
+
+def test_boots_are_sized_in_mondopoint_and_everything_else_in_cm():
+    assert size_unit_for(EquipmentType.BOOTS) is SizeUnit.MONDOPOINT
+    assert size_unit_for(EquipmentType.SKIS) is SizeUnit.CM
+    assert size_unit_for(EquipmentType.HELMET) is SizeUnit.CM
 
 
 def test_boots_size_must_be_mondopoint():

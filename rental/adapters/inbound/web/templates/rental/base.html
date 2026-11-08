@@ -4,10 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Ski Rental{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-  <main>
+  {% with page=request.resolver_match.url_name %}
+  <header class="container">
+    <nav>
+      <ul>
+        <li><a href="{% url 'home' %}" class="contrast"><strong>Ski Rental</strong></a></li>
+      </ul>
+      <ul>
+        <li><a href="{% url 'inventory' %}" {% if page == 'inventory' %}aria-current="page"{% endif %}>Inventory</a></li>
+      </ul>
+    </nav>
+  </header>
+  {% endwith %}
+  <main class="container">
     {% block content %}{% endblock %}
   </main>
 </body>
