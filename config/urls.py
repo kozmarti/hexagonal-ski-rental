@@ -39,6 +39,25 @@ urlpatterns = [
         name="rental-equipment",
     ),
     path(
+        "rentals/import/",
+        views.ImportGroupView.as_view(
+            register_customer=bootstrap.register_customer,
+            recommend_equipment=bootstrap.recommend_equipment,
+            list_available_equipment=bootstrap.list_available_equipment,
+            create_rental=bootstrap.create_rental,
+        ),
+        name="rental-import",
+    ),
+    path(
+        "rentals/import/fit/<uuid:customer_id>/",
+        views.FitChildView.as_view(
+            recommend_equipment=bootstrap.recommend_equipment,
+            list_available_equipment=bootstrap.list_available_equipment,
+            create_rental=bootstrap.create_rental,
+        ),
+        name="rental-import-fit",
+    ),
+    path(
         "rentals/<uuid:rental_id>/return/",
         views.ReturnRentalView.as_view(return_rental=bootstrap.return_rental),
         name="rental-return",

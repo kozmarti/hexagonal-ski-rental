@@ -100,6 +100,11 @@ class CreateRentalForm(forms.Form):
         )
 
 
+class ImportGroupForm(forms.Form):
+    file = forms.FileField(label="CSV file")
+    end_date = forms.DateField(label="Last day", widget=forms.DateInput(attrs={"type": "date"}))
+
+
 def parse_ids(values: Iterable[str]) -> frozenset[UUID]:
     """Raises ValueError if a value is not a UUID."""
     return frozenset(UUID(value) for value in values)
