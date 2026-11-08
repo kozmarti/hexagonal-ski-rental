@@ -95,6 +95,7 @@ rental/
     inbound/web/       # Django views + HTMX templates (call inbound ports)
     inbound/cli/       # command-line adapter (plain argparse, call inbound ports)
     inbound/csv_import/  # group import from a CSV file (plain Python, call inbound ports)
+    inbound/api/       # JSON API (Django JsonResponse views, call inbound ports)
     outbound/orm/      # Django models + ORM repositories (implement outbound ports)
     outbound/memory/   # test adapters: in-memory repositories, unit of work, FixedClock, RecordingNotifier
     outbound/price_list/     # StaticPriceList (MVP prices)
@@ -128,6 +129,12 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
     (`form.to_command()`). Domain errors are caught in the view and shown on the form.
   - Every page works without JavaScript (normal GET/POST, redirect after a successful POST).
     With HTMX, the view returns only the changed fragment (`_*.html` templates).
+- **Inbound, other entry points** (same use cases, same injection pattern):
+  - CLI (`inbound/cli/`, plain argparse) and group CSV import (`inbound/csv_import/`).
+  - JSON API (`inbound/api/`): `parsing.py` turns JSON into commands (400 with errors per field),
+    `serialization.py` turns results into JSON; `ApiView` maps errors to 400 / 404 / 409.
+    CSRF-exempt because it uses no cookie sessions. No authentication yet (shop network only):
+    when staff authentication arrives, the API gets token authentication, never cookies.
 - **Outbound**:
   - Repositories: Django ORM (production), in-memory (tests). In-memory repositories store
     copies, so a change is only kept when `save()` is called, like a real database.

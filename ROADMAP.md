@@ -153,6 +153,32 @@ Inbound (new ways to create rentals, all calling the same `CreateRental` port):
     4. The rule is checked by the domain: a customer who rented can never be removed
        (covered by `tests/unit/application/test_remove_customer.py`).
 15. `feature/json-api-adapter`: JSON API, e.g. for a self-service tablet in the shop.
+    Plain Django `JsonResponse` views in `rental/adapters/inbound/api/` (no Django REST
+    Framework), use cases injected from `config/urls.py`:
+    `GET /api/equipment/`, `POST /api/customers/`, `GET /api/customers/<id>/recommendation/`,
+    `POST /api/rentals/`, `POST /api/rentals/<id>/return/`. Errors as JSON: 400 invalid request
+    (per field), 404 not found, 409 business rule. No CSRF token (no cookie sessions) and no
+    authentication yet: for the shop's own network only.
+
+    How to try it (with the app running and the demo data loaded):
+
+    ```bash
+    # 1. Available sport skis: copy an item id
+    curl "http://localhost:8000/api/equipment/?type=skis&range=sport"
+    # 2. Register a customer: copy the id
+    curl -X POST http://localhost:8000/api/customers/ -H "Content-Type: application/json" \
+      -d '{"name": "Alex Martin", "height_cm": 175, "boot_size": 26.5, "skill_level": "intermediate"}'
+    # 3. Recommendation for that customer
+    curl http://localhost:8000/api/customers/<customer-id>/recommendation/
+    # 4. Rent (starts today, end_date is the last day): copy the rental id
+    curl -X POST http://localhost:8000/api/rentals/ -H "Content-Type: application/json" \
+      -d '{"customer_id": "<customer-id>", "equipment_ids": ["<item-id>"], "end_date": "<YYYY-MM-DD>"}'
+    # 5. Return, flagging damaged items
+    curl -X POST http://localhost:8000/api/rentals/<rental-id>/return/ -H "Content-Type: application/json" \
+      -d '{"damaged_equipment_ids": ["<item-id>"]}'
+    ```
+
+    The rental shows on the dashboard like any other one.
 
 Outbound (swap the technology behind existing ports):
 
