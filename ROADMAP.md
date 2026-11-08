@@ -78,7 +78,25 @@ Each branch includes tests for the new adapter.
 
 Inbound (new ways to create rentals, all calling the same `CreateRental` port):
 
-13. `feature/cli-adapter`: management command to create a rental from the terminal.
+13. `feature/cli-adapter`: the counter from the terminal (`ski_rental available | customer |
+    rent | return`). Plain argparse adapter in `rental/adapters/inbound/cli/`, use cases
+    injected from `config/cli.py`, started by a thin management command in `config/`.
+
+    How to try it (each step prints the ids needed by the next one):
+
+    ```bash
+    # 1. List available items, copy an item id
+    docker compose run --rm web python manage.py ski_rental available --type skis --range sport
+    # 2. Register the customer, copy the customer id
+    docker compose run --rm web python manage.py ski_rental customer --name "Alex Martin" --height 175 --boots 26.5 --level intermediate
+    # 3. Rent: starts today, --until is the last day (YYYY-MM-DD)
+    docker compose run --rm web python manage.py ski_rental rent --customer <customer-id> --items <item-id> <item-id> --until <YYYY-MM-DD>
+    # 4. Return, optionally flagging damaged items
+    docker compose run --rm web python manage.py ski_rental return <rental-id> --damaged <item-id>
+    ```
+
+    The rental shows on the dashboard and the Rentals page; after the return, its items are
+    on the Maintenance page.
 14. `feature/csv-import-adapter`: import a group (e.g. a ski school class arriving at the shop),
     one `CreateRentalCommand` per line.
 15. `feature/json-api-adapter`: JSON API, e.g. for a self-service tablet in the shop.
