@@ -133,8 +133,10 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
   - CLI (`inbound/cli/`, plain argparse) and group CSV import (`inbound/csv_import/`).
   - JSON API (`inbound/api/`): `parsing.py` turns JSON into commands (400 with errors per field),
     `serialization.py` turns results into JSON; `ApiView` maps errors to 400 / 404 / 409.
-    CSRF-exempt because it uses no cookie sessions. No authentication yet (shop network only):
-    when staff authentication arrives, the API gets token authentication, never cookies.
+    CSRF-exempt because it uses no cookie sessions. Every request needs a device API key
+    (`Authorization: Bearer <key>`, keys from the `API_KEYS` setting, injected into `ApiView` as
+    `api_keys`): 401 otherwise, and no keys configured means no access. When staff authentication
+    arrives, the API keeps token authentication, never cookies.
 - **Outbound**:
   - Repositories: Django ORM (production), in-memory (tests). In-memory repositories store
     copies, so a change is only kept when `save()` is called, like a real database.

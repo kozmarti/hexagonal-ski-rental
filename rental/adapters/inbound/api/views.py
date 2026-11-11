@@ -3,12 +3,15 @@
 Like the web views, each endpoint only knows inbound ports: the use cases are injected
 through as_view() in config/urls.py.
 
-No CSRF token: CSRF protects cookie-based sessions, and this API uses none. There is no
-authentication yet either (staff authentication is a later business change), so the API is
-meant for the shop's own network only.
+Every request needs an API key, one per device: `Authorization: Bearer <key>`. The keys are
+injected too (`api_keys`), from the API_KEYS setting. This identifies a device, not a person:
+staff accounts are a later business change.
+
+No CSRF token: CSRF protects cookie-based sessions, and this API uses none.
 """
 
-from collections.abc import Callable
+import hmac
+from collections.abc import Callable, Collection
 from uuid import UUID
 
 from django.http import HttpRequest, JsonResponse
@@ -45,9 +48,16 @@ NOT_FOUND = (CustomerNotFound, EquipmentNotFound, RentalNotFound)
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ApiView(View):
-    """Maps errors to HTTP statuses: 400 bad request, 404 not found, 409 business rule."""
+    """Checks the API key (401), then maps errors to HTTP statuses:
+    400 bad request, 404 not found, 409 business rule."""
+
+    api_keys: Callable[[], Collection[str]] | None = None
 
     def dispatch(self, request, *args, **kwargs):
+        if not self._authorized(request):
+            response = JsonResponse({"error": "A valid API key is required."}, status=401)
+            response["WWW-Authenticate"] = "Bearer"
+            return response
         try:
             return super().dispatch(request, *args, **kwargs)
         except InvalidRequest as error:
@@ -59,6 +69,15 @@ class ApiView(View):
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({"error": "Method not allowed."}, status=405)
+
+    def _authorized(self, request: HttpRequest) -> bool:
+        """No keys configured means no access: a forgotten setting never opens the API."""
+        scheme, _, key = request.headers.get("Authorization", "").partition(" ")
+        if scheme.lower() != "bearer" or not key or self.api_keys is None:
+            return False
+        # Constant-time comparison: the response time does not reveal how much of a key matched.
+        allowed_keys = self.api_keys()
+        return any(hmac.compare_digest(key.encode(), allowed.encode()) for allowed in allowed_keys)
 
 
 class EquipmentApi(ApiView):

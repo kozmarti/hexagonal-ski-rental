@@ -1,35 +1,47 @@
 # The web composition root: each view receives its use cases from bootstrap.py here,
 # outside the hexagon, so the views themselves only know inbound ports.
+from django.conf import settings
 from django.urls import path
 
 from rental import bootstrap
 from rental.adapters.inbound.api import views as api
 from rental.adapters.inbound.web import views
 
+
+def api_keys() -> frozenset[str]:
+    """Read on every request, so a changed setting applies without restarting the URL config."""
+    return frozenset(settings.API_KEYS)
+
+
+def endpoint(view_class, **use_cases):
+    """An API view with its use cases and the device keys injected."""
+    return view_class.as_view(api_keys=api_keys, **use_cases)
+
+
 api_urlpatterns = [
     path(
         "api/equipment/",
-        api.EquipmentApi.as_view(list_available_equipment=bootstrap.list_available_equipment),
+        endpoint(api.EquipmentApi, list_available_equipment=bootstrap.list_available_equipment),
         name="api-equipment",
     ),
     path(
         "api/customers/",
-        api.CustomersApi.as_view(register_customer=bootstrap.register_customer),
+        endpoint(api.CustomersApi, register_customer=bootstrap.register_customer),
         name="api-customers",
     ),
     path(
         "api/customers/<uuid:customer_id>/recommendation/",
-        api.RecommendationApi.as_view(recommend_equipment=bootstrap.recommend_equipment),
+        endpoint(api.RecommendationApi, recommend_equipment=bootstrap.recommend_equipment),
         name="api-recommendation",
     ),
     path(
         "api/rentals/",
-        api.RentalsApi.as_view(create_rental=bootstrap.create_rental),
+        endpoint(api.RentalsApi, create_rental=bootstrap.create_rental),
         name="api-rentals",
     ),
     path(
         "api/rentals/<uuid:rental_id>/return/",
-        api.ReturnRentalApi.as_view(return_rental=bootstrap.return_rental),
+        endpoint(api.ReturnRentalApi, return_rental=bootstrap.return_rental),
         name="api-rental-return",
     ),
 ]

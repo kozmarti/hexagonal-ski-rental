@@ -15,9 +15,18 @@ CUSTOMER = {"name": "Alex Martin", "height_cm": 175, "boot_size": 26.5, "skill_l
 
 
 @pytest.fixture
-def api():
-    # CSRF checks on, as for a real tablet: the API must work without a CSRF token.
-    return Client(enforce_csrf_checks=True)
+def api(settings):
+    # As for a real tablet: CSRF checks on (the API needs no CSRF token) and a device key.
+    settings.API_KEYS = ["integration-tablet-key"]
+    headers = {"Authorization": "Bearer integration-tablet-key"}
+    return Client(enforce_csrf_checks=True, headers=headers)
+
+
+def test_the_api_refuses_requests_without_the_device_key(api):
+    response = Client().get("/api/equipment/")
+
+    assert response.status_code == 401
+    assert api.get("/api/equipment/").status_code == 200
 
 
 def post(api, url, data):

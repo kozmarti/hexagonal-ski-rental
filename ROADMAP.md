@@ -153,32 +153,46 @@ Inbound (new ways to create rentals, all calling the same `CreateRental` port):
     4. The rule is checked by the domain: a customer who rented can never be removed
        (covered by `tests/unit/application/test_remove_customer.py`).
 15. `feature/json-api-adapter`: JSON API, e.g. for a self-service tablet in the shop.
-    Plain Django `JsonResponse` views in `rental/adapters/inbound/api/` (no Django REST
-    Framework), use cases injected from `config/urls.py`:
+    Plain Django `JsonResponse` views in `rental/adapters/inbound/api/`, use cases injected from `config/urls.py`:
     `GET /api/equipment/`, `POST /api/customers/`, `GET /api/customers/<id>/recommendation/`,
     `POST /api/rentals/`, `POST /api/rentals/<id>/return/`. Errors as JSON: 400 invalid request
-    (per field), 404 not found, 409 business rule. No CSRF token (no cookie sessions) and no
-    authentication yet: for the shop's own network only.
+    (per field), 404 not found, 409 business rule.
 
-    How to try it (with the app running and the demo data loaded):
+    How to try it:
 
     ```bash
+    # 0. Without the key: 401
+    curl -i http://localhost:8000/api/equipment/
     # 1. Available sport skis: copy an item id
-    curl "http://localhost:8000/api/equipment/?type=skis&range=sport"
+    curl -H "Authorization: Bearer dev-tablet-key" "http://localhost:8000/api/equipment/?type=skis&range=sport"
     # 2. Register a customer: copy the id
-    curl -X POST http://localhost:8000/api/customers/ -H "Content-Type: application/json" \
+    curl -X POST http://localhost:8000/api/customers/ -H "Authorization: Bearer dev-tablet-key" \
+      -H "Content-Type: application/json" \
       -d '{"name": "Alex Martin", "height_cm": 175, "boot_size": 26.5, "skill_level": "intermediate"}'
     # 3. Recommendation for that customer
-    curl http://localhost:8000/api/customers/<customer-id>/recommendation/
+    curl -H "Authorization: Bearer dev-tablet-key" http://localhost:8000/api/customers/<customer-id>/recommendation/
     # 4. Rent (starts today, end_date is the last day): copy the rental id
-    curl -X POST http://localhost:8000/api/rentals/ -H "Content-Type: application/json" \
+    curl -X POST http://localhost:8000/api/rentals/ -H "Authorization: Bearer dev-tablet-key" \
+      -H "Content-Type: application/json" \
       -d '{"customer_id": "<customer-id>", "equipment_ids": ["<item-id>"], "end_date": "<YYYY-MM-DD>"}'
     # 5. Return, flagging damaged items
-    curl -X POST http://localhost:8000/api/rentals/<rental-id>/return/ -H "Content-Type: application/json" \
-      -d '{"damaged_equipment_ids": ["<item-id>"]}'
+    curl -X POST http://localhost:8000/api/rentals/<rental-id>/return/ -H "Authorization: Bearer dev-tablet-key" \
+      -H "Content-Type: application/json" -d '{"damaged_equipment_ids": ["<item-id>"]}'
     ```
 
     The rental shows on the dashboard like any other one.
+15b. `feature/qr-labels`: QR code stickers on the equipment. Each QR code holds the item's
+    UUID, so the core is unchanged. Web adapter only:
+    - **Print labels**: an Inventory page printing a sheet of QR stickers, one per item
+      (with the type, model and size written under each code).
+    - **Rent by scanning**: on the counter page, scanning an item ticks it in the equipment list.
+    - **Finish maintenance by scanning**: in the workshop, scanning an item marks it done.
+    - **Return by scanning**: scanning an item the customer brings back opens the return form of
+      the active rental that contains it. The rental is found in `GetDashboard`'s active rentals
+      (each one lists its items), then `ReturnRental` does the return.
+    - Scanning works with a USB or Bluetooth barcode scanner (it types the code like a keyboard,
+      no JavaScript needed) and, optionally, the tablet camera (small JavaScript library from a
+      CDN; the camera needs HTTPS outside `localhost`).
 
 Outbound (swap the technology behind existing ports):
 

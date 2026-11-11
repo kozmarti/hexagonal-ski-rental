@@ -14,6 +14,9 @@ if not SECRET_KEY:
     SECRET_KEY = "dev-only-insecure-key"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
+# JSON API keys, one per device, comma-separated. Empty means the API refuses every request.
+API_KEYS = [key.strip() for key in os.environ.get("API_KEYS", "").split(",") if key.strip()]
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
