@@ -7,6 +7,7 @@
 
   <section>
     <h2>Available equipment</h2>
+    <p><a href="{% url 'inventory-labels' %}" role="button" class="secondary">Print labels</a></p>
     <form method="get" action="{% url 'inventory' %}"
           hx-get="{% url 'inventory' %}" hx-target="#equipment-list" hx-swap="outerHTML"
           hx-trigger="change" hx-push-url="true">

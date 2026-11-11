@@ -129,6 +129,9 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
     (`form.to_command()`). Domain errors are caught in the view and shown on the form.
   - Every page works without JavaScript (normal GET/POST, redirect after a successful POST).
     With HTMX, the view returns only the changed fragment (`_*.html` templates).
+  - Small page scripts are plain JavaScript in `web/static/rental/` (no framework), like
+    `scan.js` for QR scanning. They never insert database text as HTML.
+  - QR labels and scan pages: `web/scanning.py` (`segno` for the codes, free libraries only).
 - **Inbound, other entry points** (same use cases, same injection pattern):
   - CLI (`inbound/cli/`, plain argparse) and group CSV import (`inbound/csv_import/`).
   - JSON API (`inbound/api/`): `parsing.py` turns JSON into commands (400 with errors per field),

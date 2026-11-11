@@ -181,18 +181,41 @@ Inbound (new ways to create rentals, all calling the same `CreateRental` port):
     ```
 
     The rental shows on the dashboard like any other one.
-15b. `feature/qr-labels`: QR code stickers on the equipment. Each QR code holds the item's
-    UUID, so the core is unchanged. Web adapter only:
-    - **Print labels**: an Inventory page printing a sheet of QR stickers, one per item
-      (with the type, model and size written under each code).
-    - **Rent by scanning**: on the counter page, scanning an item ticks it in the equipment list.
-    - **Finish maintenance by scanning**: in the workshop, scanning an item marks it done.
-    - **Return by scanning**: scanning an item the customer brings back opens the return form of
-      the active rental that contains it. The rental is found in `GetDashboard`'s active rentals
-      (each one lists its items), then `ReturnRental` does the return.
-    - Scanning works with a USB or Bluetooth barcode scanner (it types the code like a keyboard,
-      no JavaScript needed) and, optionally, the tablet camera (small JavaScript library from a
-      CDN; the camera needs HTTPS outside `localhost`).
+15b. `feature/qr-labels`: QR code stickers on the equipment, web adapter only (core unchanged).
+    Each sticker holds a link to the item's page (`/scan/<id>/`). Every item in use is found by
+    combining `ListAvailableEquipment`, `GetDashboard` (rented items, inside their rentals) and
+    `ListEquipmentInMaintenance`.
+    - **Labels for any item** (Inventory → Print labels): available, rented or in maintenance,
+      filtered by status, type and range; 50 x 30 mm stickers.
+    - **A "QR" button on every item** (Inventory, Rentals, Maintenance): a dialog with the
+      item's QR code, its status and **Print this label**.
+    - **Scan** in the menu bar: scanning an item opens its page with the one action that makes
+      sense now: **Return** its rental, **Maintenance done**, or **Rent it** (the item is then
+      already ticked on the equipment step, after the customer step).
+    - **Counter page**: scanning items ticks them in the rental being prepared.
+    - Free only: `segno` for the QR codes (SVG, server side); a **phone's own camera app** opens
+      the sticker's link (no HTTPS needed); camera in the page with `html5-qrcode` (needs HTTPS,
+      or localhost); a USB or Bluetooth barcode scanner also works (it types like a keyboard).
+      One shared script, `static/rental/scan.js`. `LABELS_BASE_URL` sets the address printed in
+      the stickers, reachable by the phones.
+
+    How to try it:
+
+    ```bash
+    # 1. segno is a new dependency: rebuild the image
+    docker compose build web
+    # 2. Demo data, then start the app
+    docker compose run --rm web python manage.py seed_demo
+    docker compose up
+    ```
+
+    3. Inventory → **Print labels**: a QR sticker for every item, whatever its status.
+    4. Click **QR** next to any item (Inventory, Rentals, Maintenance): its code in a dialog.
+    5. **Scan** in the menu: paste an item id (or its sticker link) and press Enter, or use
+       **Camera** on this computer (localhost): the item's page opens with its action.
+    6. With a phone on the same Wi-Fi: set `LABELS_BASE_URL=http://<this computer's IP>:8000`
+       and add that IP to `DJANGO_ALLOWED_HOSTS` in `.env`, restart, reload the labels, then
+       scan a sticker with the phone's camera app: the item's page opens.
 
 Outbound (swap the technology behind existing ports):
 

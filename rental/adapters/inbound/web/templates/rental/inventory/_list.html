@@ -10,6 +10,7 @@
           <th>Size</th>
           <th>Range</th>
           <th>Days used</th>
+          <th>QR</th>
         </tr>
       </thead>
       <tbody>
@@ -21,6 +22,7 @@
             <td>{{ item.size|size }}</td>
             <td>{% if item.range %}{{ item.range|capfirst }}{% else %}—{% endif %}</td>
             <td>{{ item.days_used }}</td>
+            <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
           </tr>
         {% endfor %}
       </tbody>

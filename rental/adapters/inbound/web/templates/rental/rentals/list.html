@@ -26,6 +26,15 @@
             hx-post="{% url 'rental-return' rental.id %}" hx-target="closest article" hx-swap="outerHTML">
         {% csrf_token %}
         <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Brand and model</th>
+              <th>Size</th>
+              <th>Damaged</th>
+              <th>QR</th>
+            </tr>
+          </thead>
           <tbody>
             {% for item in rental.equipment %}
               <tr>
@@ -37,6 +46,7 @@
                     <input type="checkbox" name="damaged" value="{{ item.id }}"> Damaged
                   </label>
                 </td>
+                <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
               </tr>
             {% endfor %}
           </tbody>

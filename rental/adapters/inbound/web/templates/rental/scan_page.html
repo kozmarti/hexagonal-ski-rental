@@ -1,0 +1,10 @@
+{% extends "rental/base.html" %}
+
+{% block title %}Scan · Ski Rental{% endblock %}
+
+{% block content %}
+  <h1>Scan an item</h1>
+  <p>Scan a sticker (barcode scanner or camera), or paste an item id: its page opens with
+    what can be done now: rent it, return its rental, or finish its maintenance.</p>
+  {% include "rental/_scan.html" with action="goto" %}
+{% endblock %}

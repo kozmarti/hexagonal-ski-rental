@@ -1,0 +1,19 @@
+{% load static %}
+{# A scan field: a barcode scanner types the code and presses Enter; the camera fills it too. #}
+{# `action` is goto (Scan page: opens the item's page) or tick (counter): see static/rental/scan.js. #}
+{% with placeholder="00000000-0000-0000-0000-000000000000" %}
+<article data-scan="{{ action }}"
+         data-scan-url="{% url 'scan' placeholder %}" data-scan-placeholder="{{ placeholder }}">
+  <label>
+    Scan an item
+    <fieldset role="group">
+      <input type="text" autocomplete="off" autofocus
+             placeholder="Scan the sticker, or paste the item id, then Enter">
+      <button type="button" class="secondary" data-scan-camera>Camera</button>
+    </fieldset>
+  </label>
+  <div data-scan-message aria-live="polite"></div>
+  <div id="scan-reader-{{ action }}" data-scan-reader hidden></div>
+</article>
+{% endwith %}
+<script src="{% static 'rental/scan.js' %}" defer></script>

@@ -1,6 +1,7 @@
 # Views are inbound adapters. They never import bootstrap.py: each view receives the
 # use cases it needs (as factories returning inbound ports) through as_view() in config/urls.py.
 from collections.abc import Callable
+from urllib.parse import urlencode
 from uuid import UUID
 
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseBadRequest
@@ -131,24 +132,41 @@ class RentalsView(View):
         return render(request, "rental/rentals/list.html", context)
 
 
+def _item_ids(values) -> list[UUID]:
+    """Items already chosen before the equipment step (e.g. "Rent it" on a scanned item)."""
+    try:
+        return list(dict.fromkeys(parse_ids(values)))
+    except ValueError:
+        return []
+
+
+def _with_items(url: str, item_ids: list[UUID]) -> str:
+    return (
+        f"{url}?{urlencode([('item', str(item_id)) for item_id in item_ids])}" if item_ids else url
+    )
+
+
 class NewRentalView(View):
     """Step 1 at the counter: register the customer."""
 
     register_customer: Callable[[], RegisterCustomer] | None = None
 
     def get(self, request: HttpRequest) -> HttpResponse:
-        return render(request, "rental/rentals/new.html", {"form": RegisterCustomerForm()})
+        context = {"form": RegisterCustomerForm(), "items": _item_ids(request.GET.getlist("item"))}
+        return render(request, "rental/rentals/new.html", context)
 
     def post(self, request: HttpRequest) -> HttpResponse:
         form = RegisterCustomerForm(request.POST)
+        items = _item_ids(request.POST.getlist("item"))
         if form.is_valid():
             try:
                 result = self.register_customer().execute(form.to_command())
             except DomainError as error:
                 form.add_error(None, str(error))
             else:
-                return redirect("rental-equipment", customer_id=result.customer_id)
-        return render(request, "rental/rentals/new.html", {"form": form})
+                url = reverse("rental-equipment", kwargs={"customer_id": result.customer_id})
+                return redirect(_with_items(url, items))
+        return render(request, "rental/rentals/new.html", {"form": form, "items": items})
 
 
 class ChooseEquipmentView(View):
@@ -206,11 +224,13 @@ class ChooseEquipmentView(View):
         }
 
     def _page(self, request, customer_id, sections, form) -> HttpResponse:
+        # Ticked: the items chosen in this form, or the ones carried from "Rent it" (?item=).
+        preselected = [str(item_id) for item_id in _item_ids(request.GET.getlist("item"))]
         context = {
             **sections,
             "customer_id": customer_id,
             "form": form,
-            "selected": set(request.POST.getlist("equipment")),
+            "selected": set(request.POST.getlist("equipment") or preselected),
         }
         return render(request, "rental/rentals/choose.html", context)
 
