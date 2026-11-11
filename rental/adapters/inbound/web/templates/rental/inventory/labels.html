@@ -1,0 +1,58 @@
+{% extends "rental/base.html" %}
+{% load rental_tags %}
+
+{% block title %}Labels · Ski Rental{% endblock %}
+
+{% block content %}
+  <style>
+    /* 50 x 30 mm stickers, a common sheet format. */
+    .labels { display: grid; grid-template-columns: repeat(auto-fill, 5cm); gap: 0.3cm; }
+    .label { width: 5cm; height: 3cm; padding: 0.15cm; border: 1px dashed var(--pico-muted-border-color);
+             display: flex; gap: 0.15cm; align-items: center; font-size: 7pt; line-height: 1.2;
+             break-inside: avoid; overflow: hidden; overflow-wrap: anywhere; }
+    .label svg { width: 2.6cm; height: 2.6cm; flex: none; }
+    @media print {
+      header, .no-print { display: none !important; }
+      main.container { max-width: none; padding: 0; }
+      .label { border-color: #ccc; }
+    }
+  </style>
+
+  <div class="no-print">
+    <h1>Labels</h1>
+    <p>QR stickers for any item in use: available, rented or in maintenance. A phone's camera
+      opens the item's page; the Scan page reads them too.</p>
+    <form method="get" action="{% url 'inventory-labels' %}">
+      <fieldset role="group">
+        {{ filters.status }}
+        {{ filters.type }}
+        {{ filters.range }}
+        <button type="submit" class="secondary">Filter</button>
+        <button type="button" onclick="window.print()">Print</button>
+      </fieldset>
+    </form>
+    {% if filters.item.value %}
+      <p>One label only. <a href="{% url 'inventory-labels' %}">Show all labels</a></p>
+    {% endif %}
+  </div>
+
+  {% if labels %}
+    <div class="labels">
+      {% for label in labels %}
+        {% with item=label.entry.item %}
+          <div class="label">
+            {{ label.qr }}
+            <div>
+              <strong>{{ item.type|capfirst }}</strong><br>
+              {{ item.brand }} {{ item.model }}<br>
+              {{ item.size|size }}{% if item.range %} · {{ item.range|capfirst }}{% endif %}<br>
+              <small>{{ item.id|stringformat:"s"|slice:":8" }}</small>
+            </div>
+          </div>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No equipment to label.</p>
+  {% endif %}
+{% endblock %}

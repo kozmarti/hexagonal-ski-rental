@@ -1,0 +1,6 @@
+{# The "QR" button of an item: opens the QR dialog defined in base.html. #}
+{# hx-swap is explicit: inside a form with hx-swap="outerHTML" (e.g. a rental's return form), #}
+{# the button would inherit it and replace the dialog's content area itself on the first click. #}
+<button type="button" class="outline secondary qr-button"
+        hx-get="{% url 'equipment-qr' item_id %}" hx-target="#qr-dialog-content" hx-swap="innerHTML"
+        hx-on::after-request="document.getElementById('qr-dialog').showModal()">QR</button>

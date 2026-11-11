@@ -1,0 +1,15 @@
+{% load rental_tags %}
+{# Content of the QR dialog opened by an item's "QR" button. #}
+{% with item=label.entry.item %}
+  <div class="qr-dialog-code">{{ label.qr }}</div>
+  <p>
+    <strong>{{ item.type|capfirst }} · {{ item.brand }} {{ item.model }}</strong><br>
+    {{ item.size|size }}{% if item.range %} · {{ item.range|capfirst }}{% endif %}
+    · {% if label.entry.status == "rented" %}rented by {{ label.entry.rental.customer_name }}{% elif label.entry.status == "maintenance" %}in maintenance{% else %}available{% endif %}
+  </p>
+  <p><small>{{ label.url }}</small></p>
+  <div role="group">
+    <a href="{% url 'inventory-labels' %}?item={{ item.id }}" role="button" target="_blank">Print this label</a>
+    <a href="{% url 'scan' item.id %}" role="button" class="secondary">Open its page</a>
+  </div>
+{% endwith %}

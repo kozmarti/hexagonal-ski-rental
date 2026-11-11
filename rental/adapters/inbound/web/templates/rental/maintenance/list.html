@@ -22,7 +22,8 @@
             <th>Size</th>
             <th>Range</th>
             <th>Days used</th>
-            <th></th>
+            <th>Maintenance</th>
+            <th>QR</th>
           </tr>
         </thead>
         <tbody>
@@ -41,6 +42,7 @@
                   <button type="submit" class="outline">Done</button>
                 </form>
               </td>
+              <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
             </tr>
           {% endfor %}
         </tbody>

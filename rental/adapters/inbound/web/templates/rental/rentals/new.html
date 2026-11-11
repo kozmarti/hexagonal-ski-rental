@@ -5,9 +5,15 @@
 {% block content %}
   <h1>New rental</h1>
   <p>Step 1 of 2: the customer.</p>
+  {% if items %}
+    <p><ins>{{ items|length }} scanned item{{ items|length|pluralize }} will already be ticked on the next step.</ins></p>
+  {% endif %}
 
   <form method="post" action="{% url 'rental-new' %}">
     {% csrf_token %}
+    {% for item_id in items %}
+      <input type="hidden" name="item" value="{{ item_id }}">
+    {% endfor %}
     {% include "rental/_fields.html" %}
     <button type="submit">Next: choose equipment</button>
   </form>

@@ -1,0 +1,49 @@
+{% extends "rental/base.html" %}
+{% load rental_tags %}
+
+{% block title %}{{ item.type|capfirst }} · Ski Rental{% endblock %}
+
+{% block content %}
+  {# The page a scanned sticker opens, e.g. with a phone's camera: the item and one action. #}
+  <article>
+    <header>
+      <strong>{{ item.type|capfirst }} · {{ item.brand }} {{ item.model }}</strong>
+      · {{ item.size|size }}{% if item.range %} · {{ item.range|capfirst }}{% endif %}
+    </header>
+
+    {% if status == "rented" %}
+      <p>Rented by <strong>{{ rental.customer_name }}</strong>,
+        {{ rental.start_date|date:"D j M" }} → {{ rental.end_date|date:"D j M" }}.</p>
+      <form method="post" action="{% url 'rental-return' rental.id %}">
+        {% csrf_token %}
+        <fieldset>
+          <legend>Return the whole rental</legend>
+          {% for rented in rental.equipment %}
+            <label>
+              <input type="checkbox" name="damaged" value="{{ rented.id }}">
+              {{ rented.type|capfirst }} {{ rented.brand }} {{ rented.model }} · {{ rented.size|size }}:
+              damaged
+            </label>
+          {% endfor %}
+        </fieldset>
+        <button type="submit">Return</button>
+      </form>
+
+    {% elif status == "maintenance" %}
+      <p>
+        {% if item.needs_repair %}<mark>🔧 Waiting for a repair.</mark>{% else %}Waiting for its service.{% endif %}
+        Days used: {{ item.days_used }}.
+      </p>
+      <form method="post" action="{% url 'maintenance-done' item.id %}">
+        {% csrf_token %}
+        <button type="submit">Maintenance done</button>
+      </form>
+
+    {% else %}
+      <p><ins>Available.</ins> Days used: {{ item.days_used }}.</p>
+      <p><a href="{% url 'rental-new' %}?item={{ item.id }}" role="button">Rent it</a></p>
+      <p><small>Registers the customer first; this item is then already ticked.</small></p>
+    {% endif %}
+  </article>
+  <p><a href="{% url 'scan-page' %}">Scan another item</a></p>
+{% endblock %}

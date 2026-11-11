@@ -18,6 +18,8 @@
     <footer><small>A suggestion only: any available item can be rented.</small></footer>
   </article>
 
+  {% include "rental/_scan.html" with action="tick" %}
+
   <form method="post" action="{% url 'rental-equipment' customer_id %}">
     {% csrf_token %}
     {% for error in form.non_field_errors %}

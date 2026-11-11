@@ -17,8 +17,9 @@
       <ul>
         <li><a href="{% url 'dashboard' %}" {% if page == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
         <li><a href="{% url 'rentals' %}" {% if page == 'rentals' or page == 'rental-new' or page == 'rental-equipment' or page == 'rental-import' or page == 'rental-import-fit' %}aria-current="page"{% endif %}>Rentals</a></li>
-        <li><a href="{% url 'inventory' %}" {% if page == 'inventory' %}aria-current="page"{% endif %}>Inventory</a></li>
+        <li><a href="{% url 'inventory' %}" {% if page == 'inventory' or page == 'inventory-labels' %}aria-current="page"{% endif %}>Inventory</a></li>
         <li><a href="{% url 'maintenance' %}" {% if page == 'maintenance' %}aria-current="page"{% endif %}>Maintenance</a></li>
+        <li><a href="{% url 'scan-page' %}" {% if page == 'scan-page' or page == 'scan' %}aria-current="page"{% endif %}>Scan</a></li>
       </ul>
     </nav>
   </header>
@@ -26,5 +27,17 @@
   <main class="container">
     {% block content %}{% endblock %}
   </main>
+
+  {# The QR dialog, filled by any item's "QR" button (rental/_qr_button.html). #}
+  <dialog id="qr-dialog">
+    <article>
+      <header>
+        <button type="button" aria-label="Close" rel="prev" onclick="this.closest('dialog').close()"></button>
+        <strong>QR code</strong>
+      </header>
+      <div id="qr-dialog-content"></div>
+    </article>
+  </dialog>
+  <style>.qr-dialog-code svg { width: 12rem; height: 12rem; display: block; margin: 0 auto; }</style>
 </body>
 </html>

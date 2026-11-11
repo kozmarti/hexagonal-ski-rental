@@ -5,12 +5,26 @@ from django.urls import path
 
 from rental import bootstrap
 from rental.adapters.inbound.api import views as api
-from rental.adapters.inbound.web import views
+from rental.adapters.inbound.web import scanning, views
 
 
 def api_keys() -> frozenset[str]:
     """Read on every request, so a changed setting applies without restarting the URL config."""
     return frozenset(settings.API_KEYS)
+
+
+def labels_base_url() -> str:
+    return settings.LABELS_BASE_URL
+
+
+def fleet_view(view_class):
+    """A labels / QR / scan view: it combines the 3 use cases that together list every item."""
+    return view_class.as_view(
+        get_dashboard=bootstrap.get_dashboard,
+        list_equipment_in_maintenance=bootstrap.list_equipment_in_maintenance,
+        list_available_equipment=bootstrap.list_available_equipment,
+        labels_base_url=labels_base_url,
+    )
 
 
 def endpoint(view_class, **use_cases):
@@ -61,6 +75,14 @@ urlpatterns = [
         ),
         name="inventory",
     ),
+    path("inventory/labels/", fleet_view(scanning.LabelsView), name="inventory-labels"),
+    path(
+        "equipment/<uuid:equipment_id>/qr/",
+        fleet_view(scanning.QrDialogView),
+        name="equipment-qr",
+    ),
+    path("scan/", scanning.ScanPageView.as_view(), name="scan-page"),
+    path("scan/<uuid:equipment_id>/", fleet_view(scanning.ScanItemView), name="scan"),
     path(
         "rentals/",
         views.RentalsView.as_view(get_dashboard=bootstrap.get_dashboard),

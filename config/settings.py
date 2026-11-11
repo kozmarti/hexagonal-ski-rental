@@ -17,6 +17,10 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").sp
 # JSON API keys, one per device, comma-separated. Empty means the API refuses every request.
 API_KEYS = [key.strip() for key in os.environ.get("API_KEYS", "").split(",") if key.strip()]
 
+# Address printed in the QR stickers, reachable by the phones scanning them, e.g.
+# http://192.168.1.20:8000. Empty: the address of the page printing the labels is used.
+LABELS_BASE_URL = os.environ.get("LABELS_BASE_URL", "")
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
