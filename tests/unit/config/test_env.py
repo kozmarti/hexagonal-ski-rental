@@ -68,3 +68,9 @@ def test_the_health_check_answers_without_the_database(rf):
 
     assert response.status_code == 200
     assert response.content == b"ok"
+
+
+def test_tests_never_follow_the_https_redirect_of_production(settings):
+    """The production settings (DEBUG off, as in CI) redirect HTTP to HTTPS; the test client
+    speaks plain HTTP, so tests/conftest.py turns the redirect off whatever the .env says."""
+    assert settings.SECURE_SSL_REDIRECT is False
