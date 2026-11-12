@@ -220,6 +220,28 @@ Inbound (new ways to create rentals, all calling the same `CreateRental` port):
 Outbound (swap the technology behind existing ports):
 
 16. `feature/mongo-adapters`: MongoDB repositories (pymongo), selectable in `bootstrap.py`.
+    MongoDB 7 runs as a single-node replica set (transactions need one). `MongoEquipmentRepository`,
+    `MongoCustomerRepository`, `MongoRentalRepository` and `MongoUnitOfWork` implement the same
+    ports as the ORM ones; a rental and its items are **one document** (two tables in PostgreSQL).
+    `REPOSITORY_BACKEND=orm|mongo` is read only by `bootstrap.py`. The repository contract tests
+    run on in-memory, PostgreSQL and MongoDB.
+
+    How to try it:
+
+    ```bash
+    # 1. pymongo is a new dependency, MongoDB a new container
+    docker compose build web
+    # 2. Set REPOSITORY_BACKEND=mongo in .env, then empty MongoDB and load the demo data
+    docker compose run --rm web python manage.py flush_mongo
+    docker compose run --rm web python manage.py seed_demo
+    # 3. Start the app: screens, CLI, API and QR codes now work on MongoDB
+    docker compose up
+    # 4. Look at a rental document: its items are inside it
+    docker compose exec mongo mongosh ski_rental --eval "db.rentals.findOne()"
+    ```
+
+    Set `REPOSITORY_BACKEND=orm` again (and restart) to go back to PostgreSQL: each database
+    keeps its own data.
 17. `feature/email-notifier`: `EmailNotifier` replacing `LoggingNotifier`.
 18. `feature/editable-price-list`: `DjangoPriceListRepository` replacing `StaticPriceList`,
     new inbound ports `GetPriceList` and `UpdatePriceList` (validation: no negative prices),

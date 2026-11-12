@@ -1,7 +1,7 @@
 """The same tests run against every adapter of the repository ports.
 
-If both the in-memory and the Django ORM repositories pass them, the core can use
-either one without noticing the difference.
+If the in-memory, Django ORM (PostgreSQL) and MongoDB repositories all pass them, the core
+can use any of them without noticing the difference.
 """
 
 from dataclasses import asdict, dataclass
@@ -14,6 +14,11 @@ from rental.adapters.outbound.memory.repositories import (
     InMemoryCustomerRepository,
     InMemoryEquipmentRepository,
     InMemoryRentalRepository,
+)
+from rental.adapters.outbound.mongo.repositories import (
+    MongoCustomerRepository,
+    MongoEquipmentRepository,
+    MongoRentalRepository,
 )
 from rental.adapters.outbound.orm.repositories import (
     DjangoCustomerRepository,
@@ -42,11 +47,18 @@ class Repositories:
     rentals: RentalRepository
 
 
-@pytest.fixture(params=["memory", pytest.param("orm", marks=pytest.mark.django_db)])
+@pytest.fixture(params=["memory", pytest.param("orm", marks=pytest.mark.django_db), "mongo"])
 def repos(request) -> Repositories:
     if request.param == "memory":
         return Repositories(
             InMemoryEquipmentRepository(), InMemoryCustomerRepository(), InMemoryRentalRepository()
+        )
+    if request.param == "mongo":
+        context = request.getfixturevalue("mongo_context")
+        return Repositories(
+            MongoEquipmentRepository(context),
+            MongoCustomerRepository(context),
+            MongoRentalRepository(context),
         )
     return Repositories(
         DjangoEquipmentRepository(), DjangoCustomerRepository(), DjangoRentalRepository()
