@@ -97,6 +97,7 @@ rental/
     inbound/csv_import/  # group import from a CSV file (plain Python, call inbound ports)
     inbound/api/       # JSON API (Django JsonResponse views, call inbound ports)
     outbound/orm/      # Django models + ORM repositories (implement outbound ports)
+    outbound/mongo/    # MongoDB repositories + unit of work (pymongo, same outbound ports)
     outbound/memory/   # test adapters: in-memory repositories, unit of work, FixedClock, RecordingNotifier
     outbound/price_list/     # StaticPriceList (MVP prices)
     outbound/clock.py        # SystemClock (today in the shop's time zone)
@@ -141,9 +142,13 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
     `api_keys`): 401 otherwise, and no keys configured means no access. When staff authentication
     arrives, the API keeps token authentication, never cookies.
 - **Outbound**:
-  - Repositories: Django ORM (production), in-memory (tests). In-memory repositories store
-    copies, so a change is only kept when `save()` is called, like a real database.
-  - `UnitOfWork`: `transaction.atomic()` (production), `InMemoryUnitOfWork` (tests).
+  - Repositories: Django ORM on PostgreSQL or MongoDB (production, chosen by
+    `REPOSITORY_BACKEND=orm|mongo`, read only in `bootstrap.storage()`), in-memory (tests).
+    In-memory repositories store copies, so a change is only kept when `save()` is called,
+    like a real database.
+  - `UnitOfWork`: `transaction.atomic()` (ORM), a MongoDB transaction (`MongoUnitOfWork`, needs
+    the replica set), `InMemoryUnitOfWork` (tests). Mongo repositories and their unit of work
+    share a `MongoContext`, which holds the transaction's session.
   - `PriceListRepository`: `StaticPriceList` with fixed prices (MVP, also used in tests).
   - `Clock`: `SystemClock` (production), `FixedClock` (tests).
   - `Notifier`: `LoggingNotifier` writing to Python `logging` (production, the only one for now),
@@ -191,7 +196,11 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
   and `RecordingNotifier`.
   No database. These are the majority of the tests.
 - **Repository contracts** (`tests/contract/`): one set of tests runs against every adapter
-  of the repository ports (in-memory and ORM). A new repository adapter must pass them too.
+  of the repository ports (in-memory, ORM and MongoDB). A new repository adapter must pass them
+  too. MongoDB tests get a database of their own (`mongo_context` fixture), dropped afterwards.
+- Tests never follow the `.env` choice of database: `tests/conftest.py` forces
+  `REPOSITORY_BACKEND=orm` for every test, and MongoDB tests opt in explicitly. Tests must never
+  touch the developer's own data.
   Compare entities with all their fields, not only by id.
 - **ORM adapters**: a small number of pytest-django integration tests (unit of work, bootstrap).
 - **Web adapters**: a few tests checking that views call the right use case and render results.
@@ -212,6 +221,7 @@ migrations are up to date, and pytest on every pull request and on pushes to `ma
 - Create migrations: `docker compose run --rm web python manage.py makemigrations`
 - Fill an empty database with demo data: `docker compose run --rm web python manage.py seed_demo`
 - Empty the database: `docker compose run --rm web python manage.py flush --no-input`
+  (PostgreSQL), `docker compose run --rm web python manage.py flush_mongo` (MongoDB)
 - The counter from the terminal: `docker compose run --rm web python manage.py ski_rental --help`
   (`available`, `customer`, `rent`, `return`)
 

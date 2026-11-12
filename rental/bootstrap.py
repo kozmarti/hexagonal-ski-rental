@@ -1,6 +1,17 @@
 # Composition root: the only place that wires concrete adapters into the use case services.
 # Each function returns an inbound port; callers never see which adapters are behind it.
+from dataclasses import dataclass
+
+from django.conf import settings
+
 from rental.adapters.outbound.clock import SystemClock
+from rental.adapters.outbound.mongo.context import MongoContext
+from rental.adapters.outbound.mongo.repositories import (
+    MongoCustomerRepository,
+    MongoEquipmentRepository,
+    MongoRentalRepository,
+)
+from rental.adapters.outbound.mongo.unit_of_work import MongoUnitOfWork
 from rental.adapters.outbound.notifications.logging_notifier import LoggingNotifier
 from rental.adapters.outbound.orm.repositories import (
     DjangoCustomerRepository,
@@ -21,6 +32,11 @@ from rental.application.ports.inbound.register_customer import RegisterCustomer
 from rental.application.ports.inbound.register_equipment import RegisterEquipment
 from rental.application.ports.inbound.remove_customer import RemoveCustomer
 from rental.application.ports.inbound.return_rental import ReturnRental
+from rental.application.ports.outbound.clock import Clock
+from rental.application.ports.outbound.customer_repository import CustomerRepository
+from rental.application.ports.outbound.equipment_repository import EquipmentRepository
+from rental.application.ports.outbound.rental_repository import RentalRepository
+from rental.application.ports.outbound.unit_of_work import UnitOfWork
 from rental.application.services.complete_maintenance import CompleteMaintenanceService
 from rental.application.services.create_rental import CreateRentalService
 from rental.application.services.get_dashboard import GetDashboardService
@@ -35,64 +51,89 @@ from rental.application.services.remove_customer import RemoveCustomerService
 from rental.application.services.return_rental import ReturnRentalService
 
 
-def register_equipment() -> RegisterEquipment:
-    return RegisterEquipmentService(DjangoEquipmentRepository(), DjangoUnitOfWork())
+@dataclass(frozen=True)
+class Storage:
+    """The repositories and unit of work of one use case call, all on the same database."""
+
+    equipment: EquipmentRepository
+    customers: CustomerRepository
+    rentals: RentalRepository
+    uow: UnitOfWork
 
 
-def list_available_equipment() -> ListAvailableEquipment:
-    return ListAvailableEquipmentService(DjangoEquipmentRepository())
-
-
-def register_customer() -> RegisterCustomer:
-    return RegisterCustomerService(DjangoCustomerRepository(), DjangoUnitOfWork())
-
-
-def remove_customer() -> RemoveCustomer:
-    return RemoveCustomerService(
-        DjangoCustomerRepository(), DjangoRentalRepository(), DjangoUnitOfWork()
+def storage() -> Storage:
+    """The only place that chooses the database: REPOSITORY_BACKEND is "orm" or "mongo"."""
+    if settings.REPOSITORY_BACKEND == "mongo":
+        context = MongoContext(settings.MONGO_URL, settings.MONGO_DB)
+        return Storage(
+            MongoEquipmentRepository(context),
+            MongoCustomerRepository(context),
+            MongoRentalRepository(context),
+            MongoUnitOfWork(context),
+        )
+    return Storage(
+        DjangoEquipmentRepository(),
+        DjangoCustomerRepository(),
+        DjangoRentalRepository(),
+        DjangoUnitOfWork(),
     )
 
 
+def register_equipment() -> RegisterEquipment:
+    store = storage()
+    return RegisterEquipmentService(store.equipment, store.uow)
+
+
+def list_available_equipment() -> ListAvailableEquipment:
+    return ListAvailableEquipmentService(storage().equipment)
+
+
+def register_customer() -> RegisterCustomer:
+    store = storage()
+    return RegisterCustomerService(store.customers, store.uow)
+
+
+def remove_customer() -> RemoveCustomer:
+    store = storage()
+    return RemoveCustomerService(store.customers, store.rentals, store.uow)
+
+
 def recommend_equipment() -> RecommendEquipment:
-    return RecommendEquipmentService(DjangoCustomerRepository(), DjangoEquipmentRepository())
+    store = storage()
+    return RecommendEquipmentService(store.customers, store.equipment)
 
 
-def create_rental() -> CreateRental:
+def create_rental(clock: Clock | None = None) -> CreateRental:
+    """`clock` lets dev tooling (seed_demo) open a rental in the past. The app uses the
+    system clock."""
+    store = storage()
     return CreateRentalService(
-        DjangoCustomerRepository(),
-        DjangoEquipmentRepository(),
-        DjangoRentalRepository(),
+        store.customers,
+        store.equipment,
+        store.rentals,
         StaticPriceList(),
-        SystemClock(),
+        clock or SystemClock(),
         LoggingNotifier(),
-        DjangoUnitOfWork(),
+        store.uow,
     )
 
 
 def return_rental() -> ReturnRental:
+    store = storage()
     return ReturnRentalService(
-        DjangoRentalRepository(),
-        DjangoEquipmentRepository(),
-        SystemClock(),
-        LoggingNotifier(),
-        DjangoUnitOfWork(),
+        store.rentals, store.equipment, SystemClock(), LoggingNotifier(), store.uow
     )
 
 
 def complete_maintenance() -> CompleteMaintenance:
-    return CompleteMaintenanceService(
-        DjangoEquipmentRepository(), LoggingNotifier(), DjangoUnitOfWork()
-    )
+    store = storage()
+    return CompleteMaintenanceService(store.equipment, LoggingNotifier(), store.uow)
 
 
 def list_equipment_in_maintenance() -> ListEquipmentInMaintenance:
-    return ListEquipmentInMaintenanceService(DjangoEquipmentRepository())
+    return ListEquipmentInMaintenanceService(storage().equipment)
 
 
 def get_dashboard() -> GetDashboard:
-    return GetDashboardService(
-        DjangoRentalRepository(),
-        DjangoCustomerRepository(),
-        DjangoEquipmentRepository(),
-        SystemClock(),
-    )
+    store = storage()
+    return GetDashboardService(store.rentals, store.customers, store.equipment, SystemClock())

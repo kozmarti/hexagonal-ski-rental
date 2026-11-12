@@ -12,20 +12,11 @@ from django.utils import timezone
 
 from rental import bootstrap
 from rental.adapters.outbound.memory.clock import FixedClock
-from rental.adapters.outbound.notifications.logging_notifier import LoggingNotifier
-from rental.adapters.outbound.orm.repositories import (
-    DjangoCustomerRepository,
-    DjangoEquipmentRepository,
-    DjangoRentalRepository,
-)
-from rental.adapters.outbound.orm.unit_of_work import DjangoUnitOfWork
-from rental.adapters.outbound.price_list.static import StaticPriceList
 from rental.application.ports.inbound.create_rental import CreateRental, CreateRentalCommand
 from rental.application.ports.inbound.list_available_equipment import ListAvailableEquipmentQuery
 from rental.application.ports.inbound.register_customer import RegisterCustomerCommand
 from rental.application.ports.inbound.register_equipment import RegisterEquipmentCommand
 from rental.application.ports.inbound.return_rental import ReturnRentalCommand
-from rental.application.services.create_rental import CreateRentalService
 from rental.domain.equipment import EquipmentType, Range, size_unit_for
 from rental.domain.size import Size
 from rental.domain.skill_level import SkillLevel
@@ -122,7 +113,7 @@ class Command(BaseCommand):
         # Overdue: a rental always starts "today", so this one is created with a clock
         # set four days ago. Same use case, same rules, another Clock adapter.
         late = [(SKIS, PREMIUM, "175"), (BOOTS, PREMIUM, "28"), (POLES, None, "125")]
-        create_four_days_ago = self._create_rental_on(today - timedelta(days=4))
+        create_four_days_ago = bootstrap.create_rental(clock=FixedClock(today - timedelta(days=4)))
         rent(create_four_days_ago, "hugo", late, today - timedelta(days=2))
 
         # Returned today: every item goes to maintenance, the damaged board needs a repair.
@@ -134,15 +125,3 @@ class Command(BaseCommand):
         serviced = [(SNOWBOARD, SPORT, "155"), (BOOTS, SPORT, "27.5")]
         rental_id = rent(create_today, "noah", serviced, today)
         return_rental.execute(ReturnRentalCommand(rental_id))
-
-    @staticmethod
-    def _create_rental_on(day) -> CreateRental:
-        return CreateRentalService(
-            DjangoCustomerRepository(),
-            DjangoEquipmentRepository(),
-            DjangoRentalRepository(),
-            StaticPriceList(),
-            FixedClock(day),
-            LoggingNotifier(),
-            DjangoUnitOfWork(),
-        )

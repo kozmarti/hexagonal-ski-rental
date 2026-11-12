@@ -10,6 +10,19 @@ services:
       timeout: 5s
       retries: 10
 
+  # MongoDB runs as a single-node replica set: multi-document transactions (the Mongo
+  # UnitOfWork) need one. The healthcheck initializes it the first time.
+  mongo:
+    image: mongo:7
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status() } catch (e) { rs.initiate() } if (!db.hello().isWritablePrimary) { quit(1) }"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
   web:
     build: .
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
@@ -21,6 +34,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mongo:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  mongo_data:

@@ -31,9 +31,22 @@ jobs:
       POSTGRES_PASSWORD: ski_rental
       POSTGRES_HOST: localhost
       POSTGRES_PORT: "5432"
+      MONGO_URL: mongodb://localhost:27017/?directConnection=true
 
     steps:
       - uses: actions/checkout@v4
+
+      # MongoDB as a single-node replica set (needed for transactions). Started by hand:
+      # service containers cannot pass the --replSet option.
+      - name: Start MongoDB
+        run: |
+          docker run -d --name mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for attempt in $(seq 30); do
+            docker exec mongo mongosh --quiet --eval \
+              "try { rs.status() } catch (e) { rs.initiate() } if (!db.hello().isWritablePrimary) { quit(1) }" \
+              && break
+            sleep 2
+          done
 
       - uses: actions/setup-python@v5
         with:

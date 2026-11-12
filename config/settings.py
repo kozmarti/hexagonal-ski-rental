@@ -21,6 +21,12 @@ API_KEYS = [key.strip() for key in os.environ.get("API_KEYS", "").split(",") if 
 # http://192.168.1.20:8000. Empty: the address of the page printing the labels is used.
 LABELS_BASE_URL = os.environ.get("LABELS_BASE_URL", "")
 
+# Where the rental data lives: "orm" (PostgreSQL, through Django) or "mongo" (MongoDB).
+# Only bootstrap.py reads it, to choose the repository adapters.
+REPOSITORY_BACKEND = os.environ.get("REPOSITORY_BACKEND", "orm")
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb://mongo:27017/?directConnection=true")
+MONGO_DB = os.environ.get("MONGO_DB", "ski_rental")
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
