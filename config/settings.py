@@ -3,6 +3,8 @@ from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 
+from config import env
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
@@ -12,7 +14,18 @@ if not SECRET_KEY:
     if not DEBUG:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is off.")
     SECRET_KEY = "dev-only-insecure-key"
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = env.allowed_hosts(os.environ)
+
+# Behind the host's HTTPS proxy (the hosted demo): the proxy says the visitor used HTTPS.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_REDIRECT_EXEMPT = [r"^healthz/$"]  # the host's own health check, over plain HTTP
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # Not preloaded in browsers: that would bind the whole domain, not only this app.
+    SILENCED_SYSTEM_CHECKS = ["security.W021"]
 
 # JSON API keys, one per device, comma-separated. Empty means the API refuses every request.
 API_KEYS = [key.strip() for key in os.environ.get("API_KEYS", "").split(",") if key.strip()]
@@ -73,16 +86,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "ski_rental"),
-        "USER": os.environ.get("POSTGRES_USER", "ski_rental"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "ski_rental"),
-        "HOST": os.environ.get("POSTGRES_HOST", "db"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-    }
-}
+DATABASES = {"default": env.database(os.environ)}
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Europe/Paris"
@@ -90,6 +94,15 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": env.static_files_storage(STATIC_ROOT, os.environ)},
+}
+# In the production image (static files collected), WhiteNoise serves them itself: no extra
+# server. In development, runserver serves them from the apps' static folders.
+if STATIC_ROOT.is_dir():
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

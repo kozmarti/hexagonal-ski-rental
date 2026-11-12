@@ -1,0 +1,26 @@
+# Render Blueprint: the hosted demo (https://render.com/docs/blueprint-spec).
+# The web app only: the database is on Neon (Render's free PostgreSQL is deleted after 30 days).
+# Each merge into main is deployed once its GitHub checks (CI: ruff, lint-imports, migrations,
+# pytest) have passed: a red main is never deployed.
+services:
+  - type: web
+    name: hexagonal-ski-rental
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    autoDeployTrigger: checksPass
+    healthCheckPath: /healthz/
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false # Neon's connection string, typed in Render's dashboard (a secret)
+      - key: REPOSITORY_BACKEND
+        value: orm
+      - key: NOTIFIERS
+        value: logging # no email in the demo
+      - key: API_KEYS
+        generateValue: true # one device key for the JSON API, readable in the dashboard

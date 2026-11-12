@@ -14,10 +14,13 @@ def isolated_storage(settings):
     on the developer's own MongoDB data. By default they use the ORM, on pytest-django's test
     database; MongoDB tests opt in with their own temporary database (`mongo_context`).
     Notifications go to the log; tests about email opt in (Django's test mailbox catches it).
+    With DEBUG off (CI, or a .env without DJANGO_DEBUG=1) the production settings redirect
+    every plain HTTP request to HTTPS: the test client speaks plain HTTP, so no redirect.
     """
     settings.REPOSITORY_BACKEND = "orm"
     settings.MONGO_DB = f"test_{uuid4().hex[:12]}"
     settings.NOTIFIERS = ["logging"]
+    settings.SECURE_SSL_REDIRECT = False
 
 
 @pytest.fixture
