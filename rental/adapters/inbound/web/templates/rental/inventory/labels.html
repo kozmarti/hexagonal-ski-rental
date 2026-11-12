@@ -33,7 +33,11 @@
     </form>
     {% if filters.item.value %}
       <p>One label only. <a href="{% url 'inventory-labels' %}">Show all labels</a></p>
+    {% else %}
+      <p class="totals"><strong>{{ pagination.page.paginator.count }} label{{ pagination.page.paginator.count|pluralize }}</strong>.
+        One page is one A4 sheet of 36 stickers: <strong>Print</strong> prints this page.</p>
     {% endif %}
+    {% include "rental/_pagination.html" %}
   </div>
 
   {% if labels %}

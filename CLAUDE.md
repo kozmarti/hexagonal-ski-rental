@@ -134,7 +134,15 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
   - Every page works without JavaScript (normal GET/POST, redirect after a successful POST).
     With HTMX, the view returns only the changed fragment (`_*.html` templates).
   - Small page scripts are plain JavaScript in `web/static/rental/` (no framework), like
-    `scan.js` for QR scanning. They never insert database text as HTML.
+    `scan.js` for QR scanning and `theme.js` for the light / dark toggle. They never insert
+    database text as HTML. Shared styles are in `web/static/rental/app.css`, on top of Pico.css.
+  - Statuses always use the `_badge.html` badges: Available green, Rented grey, Maintenance
+    orange, Repair and Overdue red (red only for what needs a person to act).
+  - Long lists show their totals above the table and are paginated with `pagination.paginate`
+    (25 rows; labels: 36, one A4 sheet). Pagination slices the use case's list in the adapter:
+    totals and filters apply to the whole list.
+  - Every item in use, with its status, comes from `web/fleet.py` (it combines
+    `ListAvailableEquipment`, `GetDashboard` and `ListEquipmentInMaintenance`).
   - QR labels and scan pages: `web/scanning.py` (`segno` for the codes, free libraries only).
 - **Inbound, other entry points** (same use cases, same injection pattern):
   - CLI (`inbound/cli/`, plain argparse) and group CSV import (`inbound/csv_import/`).

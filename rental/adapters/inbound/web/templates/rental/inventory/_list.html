@@ -1,33 +1,54 @@
 {% load rental_tags %}
-<div id="equipment-list" class="overflow-auto"{% if oob %} hx-swap-oob="true"{% endif %}>
-  {% if items %}
-    <table class="striped">
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Brand</th>
-          <th>Model</th>
-          <th>Size</th>
-          <th>Range</th>
-          <th>Days used</th>
-          <th>QR</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
+{# Every item in use: totals per status (type and range filters applied), then one page. #}
+{# The heading is inside, so it follows the filters when HTMX reloads the list. #}
+<div id="equipment-list"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <h2>{{ title }}</h2>
+  <p class="totals">
+    <strong>{{ totals.total }} item{{ totals.total|pluralize }}</strong>:
+    {{ totals.available }} available · {{ totals.rented }} rented ·
+    {{ totals.maintenance }} in maintenance{% if totals.repairs %} ({{ totals.repairs }} to repair){% endif %}
+  </p>
+
+  {% if pagination.page.object_list %}
+    <div class="overflow-auto">
+      <table class="striped">
+        <thead>
           <tr>
-            <td>{{ item.type|capfirst }}</td>
-            <td>{{ item.brand }}</td>
-            <td>{{ item.model }}</td>
-            <td>{{ item.size|size }}</td>
-            <td>{% if item.range %}{{ item.range|capfirst }}{% else %}—{% endif %}</td>
-            <td>{{ item.days_used }}</td>
-            <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Size</th>
+            <th>Range</th>
+            <th>Days used</th>
+            <th>QR</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for entry in pagination.page %}
+            {% with item=entry.item %}
+              <tr>
+                <td>
+                  {% include "rental/_badge.html" with status=entry.status repair=item.needs_repair %}
+                  {% if entry.rental %}
+                    <br><small>{{ entry.rental.customer_name }}, until {{ entry.rental.end_date|date:"D j M" }}</small>
+                  {% endif %}
+                </td>
+                <td>{{ item.type|capfirst }}</td>
+                <td>{{ item.brand }}</td>
+                <td>{{ item.model }}</td>
+                <td>{{ item.size|size }}</td>
+                <td>{% if item.range %}{{ item.range|capfirst }}{% else %}—{% endif %}</td>
+                <td>{{ item.days_used }}</td>
+                <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
+              </tr>
+            {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "rental/_pagination.html" with hx_target="#equipment-list" %}
   {% else %}
-    <p>No available equipment.</p>
+    <p>No equipment matches these filters.</p>
   {% endif %}
 </div>

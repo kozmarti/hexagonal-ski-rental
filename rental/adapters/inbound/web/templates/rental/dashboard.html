@@ -10,19 +10,19 @@
     <h1>Today: {{ dashboard.today|date:"l j F" }}</h1>
 
     <div class="grid">
-      <article>
+      <article class="stat stat-out">
         <header>Out</header>
         <h2>{{ dashboard.active_rentals|length }}</h2>
       </article>
-      <article>
+      <article class="stat stat-due">
         <header>Due back today</header>
         <h2>{{ dashboard.due_back_today|length }}</h2>
       </article>
-      <article>
+      <article class="stat stat-overdue">
         <header>Overdue</header>
-        <h2>{% if dashboard.overdue %}<mark>{{ dashboard.overdue|length }}</mark>{% else %}0{% endif %}</h2>
+        <h2>{% if dashboard.overdue %}<span class="badge badge-overdue">{{ dashboard.overdue|length }}</span>{% else %}0{% endif %}</h2>
       </article>
-      <article>
+      <article class="stat stat-maintenance">
         <header>In maintenance</header>
         <h2>{{ dashboard.in_maintenance|length }}</h2>
         {% with repairs=dashboard.in_maintenance|needing_repair %}
@@ -31,34 +31,39 @@
       </article>
     </div>
 
+    {# Each section shows its first 10 rows; "See all" opens the full, paginated list. #}
     {% if dashboard.overdue %}
       <section>
-        <h2>Overdue</h2>
-        {% include "rental/_rental_rows.html" with rentals=dashboard.overdue late=True %}
+        <h2>Overdue ({{ dashboard.overdue|length }})</h2>
+        {% include "rental/_rental_rows.html" with rentals=dashboard.overdue|slice:":10" late=True %}
+        <p><a href="{% url 'rentals' %}?show=overdue">See all overdue rentals</a></p>
       </section>
     {% endif %}
 
     <section>
-      <h2>Due back today</h2>
+      <h2>Due back today ({{ dashboard.due_back_today|length }})</h2>
       {% if dashboard.due_back_today %}
-        {% include "rental/_rental_rows.html" with rentals=dashboard.due_back_today %}
+        {% include "rental/_rental_rows.html" with rentals=dashboard.due_back_today|slice:":10" %}
+        <p><a href="{% url 'rentals' %}?show=due-today">See all rentals due back today</a></p>
       {% else %}
         <p>Nothing due back today.</p>
       {% endif %}
     </section>
 
     <section>
-      <h2>In maintenance</h2>
+      {% with repairs=dashboard.in_maintenance|needing_repair %}
+        <h2>In maintenance ({{ dashboard.in_maintenance|length }}{% if repairs %}, {{ repairs|length }} to repair{% endif %})</h2>
+      {% endwith %}
       {% if dashboard.in_maintenance %}
         <ul>
-          {% for item in dashboard.in_maintenance %}
+          {% for item in dashboard.in_maintenance|slice:":10" %}
             <li>
-              {% if item.needs_repair %}<mark>🔧 Repair</mark>{% else %}Service{% endif %}:
+              {% include "rental/_badge.html" with status="maintenance" repair=item.needs_repair %}
               {{ item.type|capfirst }} {{ item.brand }} {{ item.model }}, {{ item.size|size }}
             </li>
           {% endfor %}
         </ul>
-        <p><a href="{% url 'maintenance' %}">Go to maintenance</a></p>
+        <p><a href="{% url 'maintenance' %}">See all items in maintenance</a></p>
       {% else %}
         <p>Nothing to service.</p>
       {% endif %}

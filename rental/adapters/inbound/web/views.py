@@ -16,14 +16,15 @@ from rental.adapters.inbound.csv_import.importer import (
     import_group,
     parse,
 )
+from rental.adapters.inbound.web.fleet import FleetFilterForm, FleetTotals, FleetView
 from rental.adapters.inbound.web.forms import (
     CreateRentalForm,
-    EquipmentFilterForm,
     ImportGroupForm,
     RegisterCustomerForm,
     RegisterEquipmentForm,
     parse_ids,
 )
+from rental.adapters.inbound.web.pagination import paginate
 from rental.application.ports.inbound.complete_maintenance import (
     CompleteMaintenance,
     CompleteMaintenanceCommand,
@@ -72,16 +73,16 @@ class DashboardView(View):
         return render(request, "rental/dashboard.html", context)
 
 
-class InventoryView(View):
-    list_available_equipment: Callable[[], ListAvailableEquipment] | None = None
+class InventoryView(FleetView):
+    """The complete inventory: every item in use with its status, filters, totals, pages."""
+
     register_equipment: Callable[[], RegisterEquipment] | None = None
 
     def get(self, request: HttpRequest) -> HttpResponse:
-        filters = EquipmentFilterForm(request.GET)
-        items = self.list_available_equipment().execute(filters.to_query())
+        filters = FleetFilterForm(request.GET)
         if is_htmx(request):
-            return render(request, "rental/inventory/_list.html", {"items": items})
-        return self._page(request, filters, RegisterEquipmentForm(), items)
+            return render(request, "rental/inventory/_list.html", self._list(request, filters))
+        return self._page(request, filters, RegisterEquipmentForm())
 
     def post(self, request: HttpRequest) -> HttpResponse:
         form = RegisterEquipmentForm(request.POST)
@@ -95,19 +96,30 @@ class InventoryView(View):
 
         if is_htmx(request):
             return render(request, "rental/inventory/_form.html", {"form": form})
-        filters = EquipmentFilterForm()
-        items = self.list_available_equipment().execute(filters.to_query())
-        return self._page(request, filters, form, items)
+        return self._page(request, FleetFilterForm(), form)
+
+    def _list(self, request: HttpRequest, filters: FleetFilterForm) -> dict:
+        """Totals count every status (the status filter only narrows the table)."""
+        entries = [entry for entry in self.fleet() if filters.keeps(entry, with_status=False)]
+        shown = [entry for entry in entries if filters.keeps(entry)]
+        return {
+            "title": filters.title(),
+            "totals": FleetTotals.of(entries),
+            "pagination": paginate(request, shown),
+        }
 
     def _registered(self, request: HttpRequest) -> HttpResponse:
         if not is_htmx(request):
             return redirect("inventory")
-        items = self.list_available_equipment().execute(EquipmentFilterForm().to_query())
-        context = {"form": RegisterEquipmentForm(), "items": items, "registered": True}
+        context = {
+            **self._list(request, FleetFilterForm()),
+            "form": RegisterEquipmentForm(),
+            "registered": True,
+        }
         return render(request, "rental/inventory/_registered.html", context)
 
-    def _page(self, request, filters, form, items) -> HttpResponse:
-        context = {"filters": filters, "form": form, "items": items}
+    def _page(self, request, filters, form) -> HttpResponse:
+        context = {**self._list(request, filters), "filters": filters, "form": form}
         return render(request, "rental/inventory/page.html", context)
 
 
@@ -119,14 +131,26 @@ def _uuid_param(request: HttpRequest, name: str) -> UUID | None:
 
 
 class RentalsView(View):
-    """Active rentals, each with a return form."""
+    """Active rentals, each with a return form. `?show=due-today` or `?show=overdue` narrows
+    the list (the dashboard's "See all" links)."""
 
     get_dashboard: Callable[[], GetDashboard] | None = None
 
     def get(self, request: HttpRequest) -> HttpResponse:
+        dashboard = self.get_dashboard().execute()
+        show = request.GET.get("show", "all")
+        rentals = {
+            "due-today": dashboard.due_back_today,
+            "overdue": dashboard.overdue,
+        }.get(show, dashboard.active_rentals)
+        created = _uuid_param(request, "created")
         context = {
-            "rentals": self.get_dashboard().execute().active_rentals,
-            "created": _uuid_param(request, "created"),
+            "dashboard": dashboard,
+            "show": show if show in ("due-today", "overdue") else "all",
+            "pagination": paginate(request, rentals),
+            "overdue_ids": {rental.id for rental in dashboard.overdue},
+            "due_today_ids": {rental.id for rental in dashboard.due_back_today},
+            "created": next((r for r in dashboard.active_rentals if r.id == created), None),
             "returned": _uuid_param(request, "returned"),
         }
         return render(request, "rental/rentals/list.html", context)
@@ -364,8 +388,11 @@ class MaintenanceView(View):
     list_equipment_in_maintenance: Callable[[], ListEquipmentInMaintenance] | None = None
 
     def get(self, request: HttpRequest) -> HttpResponse:
+        items = self.list_equipment_in_maintenance().execute()
         context = {
-            "items": self.list_equipment_in_maintenance().execute(),
+            "pagination": paginate(request, items),
+            "total": len(items),
+            "repairs": sum(item.needs_repair for item in items),
             "done": _uuid_param(request, "done"),
         }
         return render(request, "rental/maintenance/list.html", context)

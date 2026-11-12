@@ -3,9 +3,10 @@
 {% with item=label.entry.item %}
   <div class="qr-dialog-code">{{ label.qr }}</div>
   <p>
+    {% include "rental/_badge.html" with status=label.entry.status repair=item.needs_repair %}
     <strong>{{ item.type|capfirst }} · {{ item.brand }} {{ item.model }}</strong><br>
     {{ item.size|size }}{% if item.range %} · {{ item.range|capfirst }}{% endif %}
-    · {% if label.entry.status == "rented" %}rented by {{ label.entry.rental.customer_name }}{% elif label.entry.status == "maintenance" %}in maintenance{% else %}available{% endif %}
+    {% if label.entry.status == "rented" %}· rented by {{ label.entry.rental.customer_name }}{% endif %}
   </p>
   <p><small>{{ label.url }}</small></p>
   <div role="group">

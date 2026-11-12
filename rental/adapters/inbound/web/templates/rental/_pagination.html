@@ -1,0 +1,12 @@
+{# Previous / Next under a list. With `hx_target`, HTMX replaces only that element. #}
+{% if pagination.page.paginator.num_pages > 1 %}
+  <nav class="pagination" aria-label="Pages">
+    {% if pagination.previous_url %}
+      <a href="{{ pagination.previous_url }}"{% if hx_target %} hx-get="{{ pagination.previous_url }}" hx-target="{{ hx_target }}" hx-swap="outerHTML" hx-push-url="true"{% endif %}>← Previous</a>
+    {% endif %}
+    <span>Page {{ pagination.page.number }} of {{ pagination.page.paginator.num_pages }}</span>
+    {% if pagination.next_url %}
+      <a href="{{ pagination.next_url }}"{% if hx_target %} hx-get="{{ pagination.next_url }}" hx-target="{{ hx_target }}" hx-swap="outerHTML" hx-push-url="true"{% endif %}>Next →</a>
+    {% endif %}
+  </nav>
+{% endif %}

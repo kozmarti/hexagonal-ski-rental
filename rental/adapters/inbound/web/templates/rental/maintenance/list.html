@@ -11,7 +11,12 @@
     <p><ins>Maintenance done. The item is available again.</ins></p>
   {% endif %}
 
-  {% if items %}
+  <p class="totals">
+    <strong>{{ total }} item{{ total|pluralize }} waiting</strong>{% if repairs %} ·
+      <span class="badge badge-repair">🔧 {{ repairs }} to repair</span>{% endif %}
+  </p>
+
+  {% if pagination.page.object_list %}
     <div class="overflow-auto">
       <table class="striped">
         <thead>
@@ -27,9 +32,9 @@
           </tr>
         </thead>
         <tbody>
-          {% for item in items %}
+          {% for item in pagination.page %}
             <tr id="item-{{ item.id }}">
-              <td>{% if item.needs_repair %}<mark>🔧 Repair</mark>{% else %}Service{% endif %}</td>
+              <td>{% if item.needs_repair %}<span class="badge badge-repair">🔧 Repair</span>{% else %}<span class="badge badge-maintenance">Service</span>{% endif %}</td>
               <td>{{ item.type|capfirst }}</td>
               <td>{{ item.brand }} {{ item.model }}</td>
               <td>{{ item.size|size }}</td>
@@ -48,6 +53,7 @@
         </tbody>
       </table>
     </div>
+    {% include "rental/_pagination.html" %}
   {% else %}
     <p>Nothing to service. Every item is ready to rent.</p>
   {% endif %}

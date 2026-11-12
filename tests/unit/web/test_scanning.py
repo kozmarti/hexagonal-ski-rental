@@ -8,6 +8,7 @@ import pytest
 from django.http import Http404
 
 from rental.adapters.inbound.web import scanning
+from rental.adapters.inbound.web.fleet import AVAILABLE, FleetItem
 from rental.adapters.inbound.web.scanning import qr_svg
 from rental.adapters.inbound.web.views import (
     InventoryView,
@@ -71,14 +72,14 @@ class TestLabels:
     def test_every_item_in_use_gets_a_sticker_whatever_its_status(self, rf, fleet):
         content = html(fleet.view(scanning.LabelsView)(rf.get("/")))
 
-        assert content.count("<svg") == 3
+        assert content.count('<div class="label">') == 3
         for item in (fleet.available, fleet.rented, fleet.in_maintenance):
             assert str(item.id)[:8] in content
 
     def test_labels_can_be_filtered_by_status(self, rf, fleet):
         content = html(fleet.view(scanning.LabelsView)(rf.get("/", {"status": "rented"})))
 
-        assert content.count("<svg") == 1
+        assert content.count('<div class="label">') == 1
         assert str(fleet.rented.id)[:8] in content
 
     def test_one_label_can_be_printed_alone(self, rf, fleet):
@@ -86,20 +87,20 @@ class TestLabels:
 
         content = html(fleet.view(scanning.LabelsView)(request))
 
-        assert content.count("<svg") == 1
+        assert content.count('<div class="label">') == 1
         assert "One label only." in content
 
     def test_stickers_link_to_the_configured_shop_address(self, rf, fleet):
         view = scanning.LabelsView(labels_base_url=lambda: "http://192.168.1.20:8000/")
 
-        label = view.label(rf.get("/"), scanning.FleetItem(fleet.available, scanning.AVAILABLE))
+        label = view.label(rf.get("/"), FleetItem(fleet.available, AVAILABLE))
 
         assert label.url == f"http://192.168.1.20:8000/scan/{fleet.available.id}/"
 
     def test_without_an_address_the_printing_page_address_is_used(self, rf, fleet):
         view = scanning.LabelsView(labels_base_url=lambda: "")
 
-        label = view.label(rf.get("/"), scanning.FleetItem(fleet.available, scanning.AVAILABLE))
+        label = view.label(rf.get("/"), FleetItem(fleet.available, AVAILABLE))
 
         assert label.url == f"http://testserver/scan/{fleet.available.id}/"
 
@@ -129,14 +130,16 @@ class TestQrCodes:
         assert f"/inventory/labels/?item={fleet.rented.id}" in content
 
     def test_every_list_has_a_qr_button_per_item(self, rf, fleet):
+        dashboard = Dashboard(TODAY, [fleet.rental], [], [], [])
         inventory = InventoryView.as_view(
+            get_dashboard=lambda: Recorder(dashboard),
+            list_equipment_in_maintenance=lambda: Recorder([fleet.in_maintenance]),
             list_available_equipment=lambda: Recorder([fleet.available]),
             register_equipment=lambda: Recorder(),
         )
         maintenance = MaintenanceView.as_view(
             list_equipment_in_maintenance=lambda: Recorder([fleet.in_maintenance])
         )
-        dashboard = Dashboard(TODAY, [fleet.rental], [], [], [])
         rentals = RentalsView.as_view(get_dashboard=lambda: Recorder(dashboard))
 
         assert f"/equipment/{fleet.available.id}/qr/" in html(inventory(rf.get("/")))

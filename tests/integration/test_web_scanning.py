@@ -25,7 +25,7 @@ def test_a_registered_item_gets_a_label_and_a_scan_page(client, settings):
     item_page = client.get(f"/scan/{skis_id}/").content.decode()
     dialog = client.get(f"/equipment/{skis_id}/qr/").content.decode()
 
-    assert labels.count("<svg") == 1
+    assert labels.count('<div class="label">') == 1
     assert "Atomic Redster" in labels
     assert "Available." in item_page
     assert f"http://192.168.1.20:8000/scan/{skis_id}/" in dialog

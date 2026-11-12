@@ -70,6 +70,8 @@ urlpatterns = [
     path(
         "inventory/",
         views.InventoryView.as_view(
+            get_dashboard=bootstrap.get_dashboard,
+            list_equipment_in_maintenance=bootstrap.list_equipment_in_maintenance,
             list_available_equipment=bootstrap.list_available_equipment,
             register_equipment=bootstrap.register_equipment,
         ),
