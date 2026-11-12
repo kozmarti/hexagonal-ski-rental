@@ -8,14 +8,16 @@ from rental.adapters.outbound.mongo.context import MongoContext, mongo_client
 
 @pytest.fixture(autouse=True)
 def isolated_storage(settings):
-    """Tests never follow the developer's .env choice of database.
+    """Tests never follow the developer's .env choices of database and notifiers.
 
     With REPOSITORY_BACKEND=mongo in .env, tests going through bootstrap.py would otherwise run
     on the developer's own MongoDB data. By default they use the ORM, on pytest-django's test
     database; MongoDB tests opt in with their own temporary database (`mongo_context`).
+    Notifications go to the log; tests about email opt in (Django's test mailbox catches it).
     """
     settings.REPOSITORY_BACKEND = "orm"
     settings.MONGO_DB = f"test_{uuid4().hex[:12]}"
+    settings.NOTIFIERS = ["logging"]
 
 
 @pytest.fixture

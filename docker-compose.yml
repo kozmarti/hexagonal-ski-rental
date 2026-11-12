@@ -23,6 +23,13 @@ services:
       timeout: 10s
       retries: 20
 
+  # Catches every email the app sends (nothing leaves the computer): inbox at
+  # http://localhost:8025, reachable from this computer only.
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "127.0.0.1:8025:8025"
+
   web:
     build: .
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
@@ -36,6 +43,8 @@ services:
         condition: service_healthy
       mongo:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
 volumes:
   postgres_data:

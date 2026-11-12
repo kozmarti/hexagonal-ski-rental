@@ -242,7 +242,22 @@ Outbound (swap the technology behind existing ports):
 
     Set `REPOSITORY_BACKEND=orm` again (and restart) to go back to PostgreSQL: each database
     keeps its own data.
-17. `feature/email-notifier`: `EmailNotifier` replacing `LoggingNotifier`.
+17. `feature/email-notifier`: `EmailNotifier` next to `LoggingNotifier`, two adapters of the
+    `Notifier` port. `NOTIFIERS=logging|email|logging,email` is read only by `bootstrap.py`;
+    with both, a `CompositeNotifier` passes each event to both. Emails go to the shop
+    (`SHOP_EMAIL`): customers have no email address yet. An email that cannot be sent is logged
+    and never breaks a rental. In development, Mailpit catches every email (nothing is sent).
+
+    How to try it:
+
+    ```bash
+    # 1. Set NOTIFIERS=logging,email in .env, then start the app (Mailpit is a new container)
+    docker compose up
+    ```
+
+    2. Create and return a rental (counter, CLI or API).
+    3. Open the Mailpit inbox at http://localhost:8025: one email per event ("Rental created",
+       "Rental returned", "🔧 Repair needed"...). The same events are still in the app's log.
 18. `feature/editable-price-list`: `DjangoPriceListRepository` replacing `StaticPriceList`,
     new inbound ports `GetPriceList` and `UpdatePriceList` (validation: no negative prices),
     and a web screen to view and edit prices. Use case tests + ORM adapter integration tests.

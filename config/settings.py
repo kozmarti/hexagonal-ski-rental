@@ -27,6 +27,19 @@ REPOSITORY_BACKEND = os.environ.get("REPOSITORY_BACKEND", "orm")
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://mongo:27017/?directConnection=true")
 MONGO_DB = os.environ.get("MONGO_DB", "ski_rental")
 
+# Which notifiers receive the events: "logging", "email", or both ("logging,email").
+# Only bootstrap.py reads it.
+NOTIFIERS = [
+    name.strip() for name in os.environ.get("NOTIFIERS", "logging").split(",") if name.strip()
+]
+# The email notifier writes to the shop: customers have no email address yet.
+SHOP_EMAIL = os.environ.get("SHOP_EMAIL", "shop@example.com")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "ski-rental@example.com")
+# In development, Mailpit (docker-compose) catches every email: http://localhost:8025
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "mailpit")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "1025"))
+EMAIL_TIMEOUT = 5
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
