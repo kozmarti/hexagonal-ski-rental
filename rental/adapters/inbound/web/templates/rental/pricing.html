@@ -1,0 +1,49 @@
+{% extends "rental/base.html" %}
+
+{% block title %}Pricing · Ski Rental{% endblock %}
+
+{% block content %}
+  <h1>Pricing</h1>
+  <p>A ski week is Sunday to Friday: 6 days. A week must cost less than 6 days. New rentals use
+    the new prices; rentals already made keep their price.</p>
+
+  {% if saved %}
+    <p><ins>Prices saved.</ins></p>
+  {% endif %}
+  {% for error in errors %}
+    <p><del>{{ error }}</del></p>
+  {% endfor %}
+
+  <form method="post" action="{% url 'pricing' %}">
+    {% csrf_token %}
+    <div class="overflow-auto">
+      <table class="striped">
+        <thead>
+          <tr>
+            <th>Equipment</th>
+            <th>Range</th>
+            <th>Day ({{ rows.0.rate.day.currency }})</th>
+            <th>Week, 6 days ({{ rows.0.rate.day.currency }})</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>{{ row.rate.type|capfirst }}</td>
+              <td>{% if row.rate.range %}{{ row.rate.range|capfirst }}{% else %}—{% endif %}</td>
+              <td>
+                <input type="text" inputmode="decimal" name="{{ row.day_field }}" value="{{ row.day }}"
+                       aria-label="{{ row.name }}: day price">
+              </td>
+              <td>
+                <input type="text" inputmode="decimal" name="{{ row.week_field }}" value="{{ row.week }}"
+                       aria-label="{{ row.name }}: week price">
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <button type="submit">Save prices</button>
+  </form>
+{% endblock %}

@@ -258,11 +258,15 @@ Outbound (swap the technology behind existing ports):
     2. Create and return a rental (counter, CLI or API).
     3. Open the Mailpit inbox at http://localhost:8025: one email per event ("Rental created",
        "Rental returned", "🔧 Repair needed"...). The same events are still in the app's log.
-18. `feature/editable-price-list`: `DjangoPriceListRepository` replacing `StaticPriceList`,
-    new inbound ports `GetPriceList` and `UpdatePriceList` (validation: no negative prices),
-    and a web screen to view and edit prices. Use case tests + ORM adapter integration tests.
-    The core diff only shows **new** files (the new use cases); existing services and
-    `PricingPolicy` stay unchanged.
+18. `feature/editable-price-list`: a **Pricing** page (menu bar) to view and edit every rate.
+    New inbound ports `GetPriceList` and `UpdatePriceList`; `PriceListRepository` gets
+    `save()`, implemented in PostgreSQL (`DjangoPriceListRepository`, `price` table) and MongoDB
+    (`MongoPriceListRepository`, one `prices` document), so prices follow `REPOSITORY_BACKEND`.
+    `StaticPriceList` gives the starting prices until the first save. Domain rules: no negative
+    amount, a week cheaper than 6 days, and rates are edited, never added or removed
+    (`PriceList.with_rates`). An invalid change saves nothing. Contract tests on in-memory,
+    PostgreSQL and MongoDB. The core diff: two new use cases, `save()` on the port and
+    `PriceList.with_rates`; existing services and `PricingPolicy` unchanged.
 
 ## Phase 5: Design (at the end)
 

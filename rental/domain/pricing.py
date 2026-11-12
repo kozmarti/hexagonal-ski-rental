@@ -37,6 +37,14 @@ class PriceList:
                 f"No price for {equipment.type} in range {equipment.range}."
             ) from None
 
+    def with_rates(self, changes: Mapping[tuple[EquipmentType, Range | None], Rate]) -> PriceList:
+        """A new price list with some rates changed. Rates are edited, never added or removed:
+        every type and range keeps a price, so a rental never fails for lack of one."""
+        unknown = [key for key in changes if key not in self.rates]
+        if unknown:
+            raise PriceNotFound(f"No such price to change: {unknown[0][0]} {unknown[0][1]}.")
+        return PriceList({**self.rates, **changes})
+
 
 class PricingPolicy:
     """Computes the price of a rental. The prices themselves come from a PriceList."""

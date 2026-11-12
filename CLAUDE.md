@@ -49,10 +49,12 @@ a rental always starts today (no booking in advance for a future period).
   - Per item: each block of 6 days costs the week rate; remaining days cost the day rate each,
     capped at one week rate.
   - The week rate must be lower than 6 day rates.
-  - Package: a rental with skis or a snowboard **and** boots gets 10% off the total. `PricingPolicy` (domain) does the calculation only; the prices themselves
-  come from the `PriceListRepository` outbound port. In the MVP its adapter is `StaticPriceList`
-  (fixed prices in code); later a database adapter makes the price list editable
-  through `GetPriceList` / `UpdatePriceList`.
+  - Package: a rental with skis or a snowboard **and** boots gets 10% off the total.
+  - `PricingPolicy` (domain) does the calculation only; the prices themselves come from the
+    `PriceListRepository` outbound port. Staff edit them on the Pricing page
+    (`GetPriceList` / `UpdatePriceList`). Rates are edited, never added or removed
+    (`PriceList.with_rates`), so every type and range always has a price. A rental keeps the
+    price it was created with.
 - Range recommendation: beginner → discovery, intermediate → sport, advanced / expert → premium.
   It is only a suggestion; staff can rent any range to any customer.
 - Size recommendation: ski and board length from height and level.
@@ -75,7 +77,7 @@ a rental always starts today (no booking in advance for a future period).
    Events: rental created, rental returned, item sent to maintenance, maintenance completed.
 
 **Out of scope for now**: online booking and reservations for a future period, payments and deposits,
-season rentals, multiple shops, emails to customers and SMS, editable price list,
+season rentals, multiple shops, emails to customers and SMS,
 staff authentication, DIN calculation. These are future adapters/features, so don't build them unless asked.
 
 The step-by-step branch plan is in [ROADMAP.md](ROADMAP.md).
@@ -99,7 +101,7 @@ rental/
     outbound/orm/      # Django models + ORM repositories (implement outbound ports)
     outbound/mongo/    # MongoDB repositories + unit of work (pymongo, same outbound ports)
     outbound/memory/   # test adapters: in-memory repositories, unit of work, FixedClock, RecordingNotifier
-    outbound/price_list/     # StaticPriceList (MVP prices)
+    outbound/price_list/     # StaticPriceList (the starting prices)
     outbound/clock.py        # SystemClock (today in the shop's time zone)
     outbound/notifications/  # LoggingNotifier, EmailNotifier, CompositeNotifier (both at once)
   bootstrap.py         # composition root: wires outbound adapters into services
@@ -116,7 +118,8 @@ Code inside `rental/` never imports `bootstrap.py`; only `config/` does.
 
 - **Inbound** (what the app offers): `RegisterEquipment`, `ListAvailableEquipment`,
   `RegisterCustomer`, `RemoveCustomer`, `RecommendEquipment`, `CreateRental`, `ReturnRental`,
-  `ListEquipmentInMaintenance`, `CompleteMaintenance`, `GetDashboard`.
+  `ListEquipmentInMaintenance`, `CompleteMaintenance`, `GetDashboard`, `GetPriceList`,
+  `UpdatePriceList`.
 - **Outbound** (what the app needs): `EquipmentRepository`, `RentalRepository`,
   `CustomerRepository`, `PriceListRepository`, `Clock`, `Notifier`, `UnitOfWork` (when atomic multi-entity writes are needed).
 
@@ -149,7 +152,9 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
   - `UnitOfWork`: `transaction.atomic()` (ORM), a MongoDB transaction (`MongoUnitOfWork`, needs
     the replica set), `InMemoryUnitOfWork` (tests). Mongo repositories and their unit of work
     share a `MongoContext`, which holds the transaction's session.
-  - `PriceListRepository`: `StaticPriceList` with fixed prices (MVP, also used in tests).
+  - `PriceListRepository`: `DjangoPriceListRepository` or `MongoPriceListRepository` (editable,
+    following `REPOSITORY_BACKEND`), starting from `StaticPriceList`'s prices until the first
+    save; `InMemoryPriceList` and the test price list in tests.
   - `Clock`: `SystemClock` (production), `FixedClock` (tests).
   - `Notifier`: `LoggingNotifier` (Python `logging`, the default) and `EmailNotifier` (Django's
     email, to the shop's `SHOP_EMAIL`; a sending failure is logged, never raised), chosen by
