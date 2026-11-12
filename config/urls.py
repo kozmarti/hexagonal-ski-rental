@@ -5,7 +5,7 @@ from django.urls import path
 
 from rental import bootstrap
 from rental.adapters.inbound.api import views as api
-from rental.adapters.inbound.web import scanning, views
+from rental.adapters.inbound.web import pricing, scanning, views
 
 
 def api_keys() -> frozenset[str]:
@@ -142,5 +142,13 @@ urlpatterns = [
         "maintenance/<uuid:equipment_id>/done/",
         views.CompleteMaintenanceView.as_view(complete_maintenance=bootstrap.complete_maintenance),
         name="maintenance-done",
+    ),
+    path(
+        "pricing/",
+        pricing.PricingView.as_view(
+            get_price_list=bootstrap.get_price_list,
+            update_price_list=bootstrap.update_price_list,
+        ),
+        name="pricing",
     ),
 ]

@@ -53,6 +53,23 @@ class RentalModel(models.Model):
         db_table = "rental"
 
 
+class PriceModel(models.Model):
+    """One rate of the price list. `range` is "" for helmets and poles (not NULL: the unique
+    constraint would not see two NULLs as equal)."""
+
+    equipment_type = models.CharField(max_length=20, choices=choices(EquipmentType))
+    range = models.CharField(max_length=20, blank=True, default="")
+    day_amount = models.DecimalField(max_digits=8, decimal_places=2)
+    week_amount = models.DecimalField(max_digits=8, decimal_places=2)
+    currency = models.CharField(max_length=3)
+
+    class Meta:
+        db_table = "price"
+        constraints = [
+            models.UniqueConstraint(fields=["equipment_type", "range"], name="unique_price"),
+        ]
+
+
 class RentalItemModel(models.Model):
     """The items of a rental. Saved with the rental by RentalRepository, not on their own."""
 

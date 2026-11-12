@@ -25,7 +25,8 @@ PRICES = {
 
 
 class StaticPriceList:
-    """Fixed prices for the MVP. Later replaced by a database-backed, editable price list."""
+    """The shop's starting prices. The database price lists use them until prices are first
+    saved; StaticPriceList itself cannot be edited."""
 
     def get(self) -> PriceList:
         return PriceList(PRICES)

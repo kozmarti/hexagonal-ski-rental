@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from rental.domain.equipment import Range
+from rental.domain.equipment import EquipmentType, Range
 from rental.domain.exceptions import InvalidPriceList, PriceNotFound
 from rental.domain.pricing import PricingPolicy, Rate
 from rental.domain.rental_period import RentalPeriod
@@ -52,3 +52,22 @@ def test_week_rate_must_be_less_than_six_day_rates():
 def test_missing_price_is_reported():
     with pytest.raises(PriceNotFound):
         price([make_skis(Range.PREMIUM)], days(1))
+
+
+def test_rates_can_be_changed_and_the_other_rates_stay():
+    sport_skis, helmets = (EquipmentType.SKIS, Range.SPORT), (EquipmentType.HELMET, None)
+    price_list = make_price_list()
+
+    changed = price_list.with_rates({sport_skis: Rate(day=eur("35"), week=eur("160"))})
+
+    assert changed.rates[sport_skis] == Rate(day=eur("35"), week=eur("160"))
+    assert changed.rates[helmets] == price_list.rates[helmets]
+    assert price_list.rates[sport_skis].day == eur("30")
+
+
+def test_a_rate_can_never_be_added():
+    # Rates are edited, never added or removed: every type and range keeps a price.
+    premium_skis = (EquipmentType.SKIS, Range.PREMIUM)
+
+    with pytest.raises(PriceNotFound):
+        make_price_list().with_rates({premium_skis: Rate(eur("40"), eur("190"))})
