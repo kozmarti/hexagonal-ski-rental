@@ -12,10 +12,10 @@
   {% csrf_token %}
   <input type="hidden" name="line" value="{{ line }}">
   {% for error in form.non_field_errors %}
-    <p><del>{{ error }}</del></p>
+    <p class="notice notice-error" role="alert">{{ error }}</p>
   {% endfor %}
   {% for error in form.equipment.errors %}
-    <p><del>{{ error }}</del></p>
+    <p class="notice notice-error" role="alert">{{ error }}</p>
   {% endfor %}
 
   {% include "rental/rentals/_items.html" with title="Recommended skis" items=recommendation.skis %}

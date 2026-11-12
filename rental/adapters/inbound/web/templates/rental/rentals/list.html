@@ -24,10 +24,10 @@
   </nav>
 
   {% if created %}
-    <p><ins>Rental created for {{ created.customer_name }}: {{ created.price|money }}.</ins></p>
+    <p class="notice notice-success" role="status">Rental created for {{ created.customer_name }}: {{ created.price|money }}.</p>
   {% endif %}
   {% if returned %}
-    <p><ins>Rental returned. Its items are now in maintenance.</ins></p>
+    <p class="notice notice-success" role="status">Rental returned. Its items are now in maintenance.</p>
   {% endif %}
 
   {% for rental in pagination.page %}
@@ -37,13 +37,13 @@
         · {{ rental.start_date|date:"D j M" }} → {{ rental.end_date|date:"D j M" }}
         · {{ rental.price|money }}
         {% if rental.id in overdue_ids %}{% include "rental/_badge.html" with status="overdue" %}{% elif rental.id in due_today_ids %}<small>Due back today</small>{% endif %}
-        {% if rental.id == created.id %}<ins>New</ins>{% endif %}
+        {% if rental.id == created.id %}<span class="badge badge-new">New</span>{% endif %}
       </header>
       <form method="post" action="{% url 'rental-return' rental.id %}"
             hx-post="{% url 'rental-return' rental.id %}" hx-target="closest article" hx-swap="outerHTML">
         {% csrf_token %}
         <div class="overflow-auto">
-          <table>
+          <table class="cards">
             <thead>
               <tr>
                 <th>Type</th>
@@ -56,15 +56,15 @@
             <tbody>
               {% for item in rental.equipment %}
                 <tr>
-                  <td>{{ item.type|capfirst }}</td>
-                  <td>{{ item.brand }} {{ item.model }}</td>
-                  <td>{{ item.size|size }}</td>
-                  <td>
+                  <td data-label="Type">{{ item.type|capfirst }}</td>
+                  <td data-label="Brand and model">{{ item.brand }} {{ item.model }}</td>
+                  <td data-label="Size">{{ item.size|size }}</td>
+                  <td class="action">
                     <label>
                       <input type="checkbox" name="damaged" value="{{ item.id }}"> Damaged
                     </label>
                   </td>
-                  <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
+                  <td class="action">{% include "rental/_qr_button.html" with item_id=item.id %}</td>
                 </tr>
               {% endfor %}
             </tbody>

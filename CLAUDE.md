@@ -128,7 +128,14 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
 ### Adapters
 
 - **Inbound**: Django + HTMX views for shop staff.
-  - Styling: Pico.css (CDN), top menu bar in `base.html`; each new screen adds its link there.
+  - Styling: Pico.css (CDN, Cyan theme) and the Manrope font (self-hosted in `static/rental/fonts`).
+    Top menu bar in `base.html`; on phones (under 768px) a tab bar at the bottom
+    (`_tab_bar.html`) replaces its main links. A new screen adds its link to both and its URL
+    name to the `menu_section` filter.
+  - Messages after an action are `.notice` boxes (`notice-error` red, `notice-success` green,
+    `notice-warning` orange), never `<del>` / `<ins>` / `<mark>` (Pico strikes them through).
+  - On phones, tables with class `cards` become one card per row: every value cell has a
+    `data-label` (its column name), buttons and checkboxes have class `action`.
   - Django forms only parse and check the input format, then build the command
     (`form.to_command()`). Domain errors are caught in the view and shown on the form.
   - Every page works without JavaScript (normal GET/POST, redirect after a successful POST).

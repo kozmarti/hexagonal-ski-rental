@@ -295,9 +295,18 @@ Outbound (swap the technology behind existing ports):
     - **Menu bar**: a line across the window separates it from the page, and the current page
       is clearly marked with a soft tinted background (no underline).
 
-19b. `feature/mobile`: the mobile style. On phones, the menu becomes a **bottom tab bar** with
-    icons (like a phone app); every page checked at phone width (tables, forms, dialogs).
-    Web adapter only.
+19b. `feature/mobile`: the mobile style, web adapter only. Under 768px wide (Pico's first
+    breakpoint):
+    - **A tab bar at the bottom** with line icons (like a phone app): Dashboard, Rentals,
+      **Scan** (in the middle, a bigger round button: the main action at the counter),
+      Inventory, Maintenance. The top bar keeps the logo, Pricing and the light / dark button.
+      The current page is marked in both bars from one `menu_section` template filter.
+    - **Lists as cards**: Inventory, Rentals, Maintenance, the dashboard's rentals and Pricing.
+      Each row becomes a card with its fields in two columns, the column name (`data-label`) in
+      small above each value, the buttons side by side. Same HTML table as on a wide screen,
+      only CSS changes, so the HTMX row swaps keep working.
+    - The dashboard's four counters two by two.
+    - Every page checked at phone width: no sideways scrolling (forms, QR dialog, Scan, Pricing).
 
 ## Phase 6: CD (to discuss at the end)
 

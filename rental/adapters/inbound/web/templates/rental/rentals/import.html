@@ -11,7 +11,7 @@
       <header>
         <strong>{{ rented }} of {{ lines|length }} children equipped</strong>
         · total {{ total|money }}
-        <p id="import-banner"></p>
+        <div id="import-banner" role="status"></div>
       </header>
       <div class="overflow-auto">
         <table>
@@ -31,7 +31,7 @@
                   {% if line.rental_id %}
                     {% include "rental/rentals/_import_result.html" with items=line.items price=line.price %}
                   {% else %}
-                    <del>{{ line.error }}</del>
+                    <span class="text-error">{{ line.error }}</span>
                     {% if line.customer_id %}
                       <div role="group">
                         <button type="button" class="outline"
@@ -82,8 +82,8 @@
         function refreshBanner() {
           const count = pending();
           banner.innerHTML = count
-            ? `<mark>${count} ${count === 1 ? "child still needs" : "children still need"} equipment.</mark>`
-            : "<ins>All children handled ✅</ins>";
+            ? `<p class="notice notice-warning">${count} ${count === 1 ? "child still needs" : "children still need"} equipment.</p>`
+            : '<p class="notice notice-success">All children handled ✅</p>';
         }
 
         // A successful "Fit by hand" or "Not renting" replaces the child's result cell:

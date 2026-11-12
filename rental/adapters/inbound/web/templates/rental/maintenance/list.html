@@ -8,7 +8,7 @@
   <p>Every returned item is serviced (waxing, sharpening, drying) before its next rental.</p>
 
   {% if done %}
-    <p><ins>Maintenance done. The item is available again.</ins></p>
+    <p class="notice notice-success" role="status">Maintenance done. The item is available again.</p>
   {% endif %}
 
   <p class="totals">
@@ -18,7 +18,7 @@
 
   {% if pagination.page.object_list %}
     <div class="overflow-auto">
-      <table class="striped">
+      <table class="striped cards">
         <thead>
           <tr>
             <th>Work</th>
@@ -35,19 +35,19 @@
           {% for item in pagination.page %}
             <tr id="item-{{ item.id }}">
               <td>{% if item.needs_repair %}<span class="badge badge-repair">🔧 Repair</span>{% else %}<span class="badge badge-maintenance">Service</span>{% endif %}</td>
-              <td>{{ item.type|capfirst }}</td>
-              <td>{{ item.brand }} {{ item.model }}</td>
-              <td>{{ item.size|size }}</td>
-              <td>{% if item.range %}{{ item.range|capfirst }}{% else %}—{% endif %}</td>
-              <td>{{ item.days_used }}</td>
-              <td>
+              <td data-label="Type">{{ item.type|capfirst }}</td>
+              <td data-label="Brand and model">{{ item.brand }} {{ item.model }}</td>
+              <td data-label="Size">{{ item.size|size }}</td>
+              <td data-label="Range">{% if item.range %}{{ item.range|capfirst }}{% else %}—{% endif %}</td>
+              <td data-label="Days used">{{ item.days_used }}</td>
+              <td class="action">
                 <form method="post" action="{% url 'maintenance-done' item.id %}"
                       hx-post="{% url 'maintenance-done' item.id %}" hx-target="closest tr" hx-swap="outerHTML">
                   {% csrf_token %}
                   <button type="submit" class="outline">Done</button>
                 </form>
               </td>
-              <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
+              <td class="action">{% include "rental/_qr_button.html" with item_id=item.id %}</td>
             </tr>
           {% endfor %}
         </tbody>

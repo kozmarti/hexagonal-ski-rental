@@ -1,5 +1,5 @@
 {% for error in form.non_field_errors %}
-  <p><del>{{ error }}</del></p>
+  <p class="notice notice-error" role="alert">{{ error }}</p>
 {% endfor %}
 <div class="grid">
   {% for field in form %}

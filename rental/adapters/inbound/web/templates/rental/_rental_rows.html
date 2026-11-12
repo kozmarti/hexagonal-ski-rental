@@ -1,6 +1,6 @@
 {% load rental_tags %}
 <div class="overflow-auto">
-  <table>
+  <table class="cards">
     <thead>
       <tr>
         <th>Customer</th>
@@ -13,13 +13,13 @@
     <tbody>
       {% for rental in rentals %}
         <tr>
-          <td>{{ rental.customer_name }}</td>
-          <td>{% for item in rental.equipment %}{{ item.type|capfirst }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
-          <td>
+          <td><strong>{{ rental.customer_name }}</strong></td>
+          <td data-label="Items">{% for item in rental.equipment %}{{ item.type|capfirst }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          <td data-label="Last day">
             {{ rental.end_date|date:"D j M" }}
             {% if late %}<br><span class="badge badge-overdue">{{ rental.end_date|timesince:dashboard.today }} late</span>{% endif %}
           </td>
-          <td>{{ rental.price|money }}</td>
+          <td data-label="Price">{{ rental.price|money }}</td>
           <td><a href="{% url 'rentals' %}#rental-{{ rental.id }}">Return</a></td>
         </tr>
       {% endfor %}

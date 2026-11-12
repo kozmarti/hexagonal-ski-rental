@@ -71,6 +71,30 @@ h3 {
 .badge-repair,
 .badge-overdue { background: #c62828; }
 
+.badge-new { background: var(--pico-primary); }
+
+/* Messages after an action: a tinted box with a colored bar on the left. Red for errors,
+   green for success, orange for a warning. (Not <del> / <ins>: Pico strikes them through or
+   underlines them, as deleted / inserted text.) */
+.notice {
+  margin-bottom: var(--pico-spacing);
+  padding: 0.6rem 0.9rem;
+  border-left: 4px solid var(--notice-color);
+  border-radius: var(--pico-border-radius);
+  background: color-mix(in srgb, var(--notice-color) 12%, var(--pico-background-color));
+  color: var(--pico-color);
+}
+.notice-error { --notice-color: #c62828; }
+.notice-success { --notice-color: #2e7d32; }
+.notice-warning { --notice-color: #d97706; }
+td .notice { margin: 0; }
+/* An error inside a table cell (the group import's report). */
+.text-error { color: #c62828; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .text-error { color: #ef8a80; }
+}
+[data-theme="dark"] .text-error { color: #ef8a80; }
+
 /* A list's totals, above its table. */
 .totals { color: var(--pico-muted-color); }
 .totals strong { color: var(--pico-color); }
@@ -92,3 +116,107 @@ h3 {
 }
 .theme-toggle:hover,
 .theme-toggle:focus-visible { background: var(--pico-muted-border-color); }
+
+/* ---- Phones (under 768px, Pico's first breakpoint) ---------------------------------------- */
+
+/* The tab bar (rental/_tab_bar.html): only on phones, where it replaces the top bar's links. */
+.tab-bar { display: none; }
+
+@media (max-width: 767px) {
+  .wide-only { display: none; }
+
+  .tab-bar {
+    display: flex;
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 10;
+    justify-content: space-around;
+    align-items: flex-end;
+    /* The home indicator of recent iPhones sits below the bar, not on it. */
+    padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--pico-primary) 7%, var(--pico-background-color));
+    border-top: 1px solid var(--pico-muted-border-color);
+  }
+  .tab-bar a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.2rem 0;
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    text-decoration: none;
+  }
+  .tab-bar svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .tab-bar a[aria-current="page"] { color: var(--pico-primary); font-weight: 700; }
+  /* Scan, in the middle: a round button raised above the bar. */
+  .tab-bar .tab-scan svg {
+    width: 3.2rem;
+    height: 3.2rem;
+    margin-top: -1.4rem;
+    padding: 0.75rem;
+    border-radius: 50%;
+    background: var(--pico-primary);
+    color: var(--pico-primary-inverse);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  }
+
+  /* The dashboard's four counters: two by two, so the lists below stay in sight. */
+  .stats { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .stats .stat { margin: 0; padding: 0.6rem 0.8rem; }
+  .stats .stat > header { margin: -0.6rem -0.8rem 0.4rem; padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+
+  /* Room for the tab bar under the last line of every page. */
+  body { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+
+  /* Tables with class "cards": each row becomes a card, its cells in two columns, each with
+     its column name (the cell's data-label) in small above the value. Cells without a label,
+     like the status badge or the customer, take the whole width at the top. */
+  table.cards thead { display: none; }
+  table.cards,
+  table.cards tbody { display: block; width: 100%; }
+  table.cards tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 1rem;
+    margin-bottom: 0.75rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    background: var(--pico-card-background-color);
+  }
+  table.cards td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    border: none;
+    background: none !important; /* no stripes inside a card */
+  }
+  table.cards td:not([data-label]),
+  table.cards td[colspan] { grid-column: 1 / -1; }
+  table.cards td br { display: none; }
+  /* Buttons and checkboxes (class "action"): no label, side by side at the bottom of the card. */
+  table.cards td.action { grid-column: auto; justify-content: center; }
+  table.cards td.action label { margin: 0; }
+  table.cards td input { margin: 0.15rem 0 0; }
+  table.cards td[data-label]::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    color: var(--pico-muted-color);
+  }
+  table.cards td form,
+  table.cards td button { margin: 0; }
+
+  /* The rentals' tab links (All / Due back today / Overdue) wrap instead of overflowing. */
+  nav[aria-label="Show"] ul { flex-wrap: wrap; }
+}

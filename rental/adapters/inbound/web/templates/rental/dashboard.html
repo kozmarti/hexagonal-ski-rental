@@ -9,7 +9,7 @@
        hx-select="#dashboard" hx-swap="outerHTML">
     <h1>Today: {{ dashboard.today|date:"l j F" }}</h1>
 
-    <div class="grid">
+    <div class="grid stats">
       <article class="stat stat-out">
         <header>Out</header>
         <h2>{{ dashboard.active_rentals|length }}</h2>

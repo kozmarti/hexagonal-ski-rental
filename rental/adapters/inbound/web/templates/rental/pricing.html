@@ -8,16 +8,16 @@
     the new prices; rentals already made keep their price.</p>
 
   {% if saved %}
-    <p><ins>Prices saved.</ins></p>
+    <p class="notice notice-success" role="status">Prices saved.</p>
   {% endif %}
   {% for error in errors %}
-    <p><del>{{ error }}</del></p>
+    <p class="notice notice-error" role="alert">{{ error }}</p>
   {% endfor %}
 
   <form method="post" action="{% url 'pricing' %}">
     {% csrf_token %}
     <div class="overflow-auto">
-      <table class="striped">
+      <table class="striped cards">
         <thead>
           <tr>
             <th>Equipment</th>
@@ -29,13 +29,13 @@
         <tbody>
           {% for row in rows %}
             <tr>
-              <td>{{ row.rate.type|capfirst }}</td>
-              <td>{% if row.rate.range %}{{ row.rate.range|capfirst }}{% else %}—{% endif %}</td>
-              <td>
+              <td data-label="Equipment">{{ row.rate.type|capfirst }}</td>
+              <td data-label="Range">{% if row.rate.range %}{{ row.rate.range|capfirst }}{% else %}—{% endif %}</td>
+              <td data-label="Day ({{ row.rate.day.currency }})">
                 <input type="text" inputmode="decimal" name="{{ row.day_field }}" value="{{ row.day }}"
                        aria-label="{{ row.name }}: day price">
               </td>
-              <td>
+              <td data-label="Week ({{ row.rate.day.currency }})">
                 <input type="text" inputmode="decimal" name="{{ row.week_field }}" value="{{ row.week }}"
                        aria-label="{{ row.name }}: week price">
               </td>

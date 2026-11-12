@@ -32,7 +32,7 @@
 
     {% elif status == "maintenance" %}
       <p>
-        {% if item.needs_repair %}<mark>🔧 Waiting for a repair.</mark>{% else %}Waiting for its service.{% endif %}
+        {% if item.needs_repair %}Waiting for a repair.{% else %}Waiting for its service.{% endif %}
         Days used: {{ item.days_used }}.
       </p>
       <form method="post" action="{% url 'maintenance-done' item.id %}">
@@ -41,7 +41,7 @@
       </form>
 
     {% else %}
-      <p><ins>Available.</ins> Days used: {{ item.days_used }}.</p>
+      <p>Ready to rent. Days used: {{ item.days_used }}.</p>
       <p><a href="{% url 'rental-new' %}?item={{ item.id }}" role="button">Rent it</a></p>
       <p><small>Registers the customer first; this item is then already ticked.</small></p>
     {% endif %}
