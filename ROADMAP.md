@@ -310,9 +310,36 @@ Outbound (swap the technology behind existing ports):
 
 ## Phase 6: CD (to discuss at the end)
 
-20. `chore/cd`
-    Deploy the app automatically from `main` (hosting target to decide), so the README
-    can link to a live demo.
+20. `chore/cd`: a public demo, deployed automatically from `main`. Free services only:
+    - **Render** (free web service) runs the app from the `Dockerfile`: gunicorn, WhiteNoise for
+      the static files (hashed names, cached for a year), migrations at each start (the free
+      plan has no pre-deploy step). It sleeps after 15 minutes without visitors: the first
+      visit then takes about a minute. Settings in `render.yaml` (a Render Blueprint).
+    - **Neon** (free PostgreSQL, permanent) holds the data: Render's free database is deleted
+      after 30 days. The app reads its address from `DATABASE_URL` (`config/env.py`).
+    - **Deploys**: Render deploys each merge into `main` once its GitHub checks have passed
+      (`autoDeployTrigger: checksPass`): a red `main` is never deployed. CI also checks the
+      production settings (`check --deploy`: HTTPS, HSTS, secure cookies).
+    - **Nightly reset** (`.github/workflows/reset-demo.yml`): the demo has no login, so every
+      night at 03:00 UTC GitHub Actions empties the database and runs `seed_demo`.
+    - The demo uses the logging notifier only (no email) and the PostgreSQL adapters.
+
+    **How to set it up** (once, after merging):
+    1. [neon.com](https://neon.com): create a free project (region Frankfurt), copy its
+       connection string (`postgresql://...?sslmode=require`).
+    2. GitHub, repository *Settings → Secrets and variables → Actions*: new secret
+       `DEMO_DATABASE_URL` = the connection string.
+    3. GitHub, *Actions → Reset demo → Run workflow*: creates the tables and the demo data.
+    4. [render.com](https://render.com): sign in with GitHub, *New → Blueprint*, choose this
+       repository: it reads `render.yaml`. Paste the same connection string in `DATABASE_URL`.
+       The demo is at `https://hexagonal-ski-rental.onrender.com` (or the address Render shows).
+    5. Phones can scan the QR codes with the camera there: the demo is served over HTTPS.
+
+    GitHub pauses scheduled workflows after 60 days without any commit: the *Reset demo*
+    page then shows a button to turn it back on.
+
+20b. `docs/readme`: the README brought up to date with everything built, and the link to the
+    live demo.
 
 ## Later (business changes, the core will change)
 

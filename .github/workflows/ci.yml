@@ -68,5 +68,12 @@ jobs:
       - name: Migrations are up to date
         run: python manage.py makemigrations --check --dry-run
 
+      # The settings the hosted demo runs with (DEBUG off): HTTPS, secure cookies, HSTS...
+      - name: Production settings (check --deploy)
+        run: python manage.py check --deploy --fail-level WARNING
+        env:
+          DJANGO_DEBUG: "0"
+          DJANGO_SECRET_KEY: ci-deploy-check-${{ github.run_id }}-0123456789abcdefghijklmnopqrstuvwxyz
+
       - name: Tests (pytest)
         run: pytest

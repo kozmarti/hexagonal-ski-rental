@@ -1,6 +1,7 @@
 # The web composition root: each view receives its use cases from bootstrap.py here,
 # outside the hexagon, so the views themselves only know inbound ports.
 from django.conf import settings
+from django.http import HttpResponse
 from django.urls import path
 
 from rental import bootstrap
@@ -60,7 +61,14 @@ api_urlpatterns = [
     ),
 ]
 
+
+def healthz(request):
+    """The host's health check: answers without the database, so checks never wake it up."""
+    return HttpResponse("ok", content_type="text/plain")
+
+
 urlpatterns = [
+    path("healthz/", healthz, name="healthz"),
     *api_urlpatterns,
     path(
         "",

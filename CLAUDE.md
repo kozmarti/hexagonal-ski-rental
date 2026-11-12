@@ -240,7 +240,13 @@ Everything runs in Docker (Python 3.12 + PostgreSQL 16). First time: `cp .env.ex
 - Format: `docker compose run --rm web ruff format .` (CI runs `ruff format --check .`)
 
 CI (GitHub Actions, `.github/workflows/ci.yml`) runs ruff, lint-imports, a check that
-migrations are up to date, and pytest on every pull request and on pushes to `main`.
+migrations are up to date, the production settings check (`check --deploy`) and pytest on
+every pull request and on pushes to `main`.
+
+The public demo: Render (`render.yaml`, the `Dockerfile`'s gunicorn command) deploys `main`
+once CI has passed; the data is on Neon (`DATABASE_URL`); `.github/workflows/reset-demo.yml`
+empties it and runs `seed_demo` every night. Settings that depend on where the app runs are
+small tested functions in `config/env.py`. Setup steps: ROADMAP step 20.
 - Create migrations: `docker compose run --rm web python manage.py makemigrations`
 - Fill an empty database with demo data: `docker compose run --rm web python manage.py seed_demo`
 - Empty the database: `docker compose run --rm web python manage.py flush --no-input`
