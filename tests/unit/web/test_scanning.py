@@ -181,7 +181,7 @@ class TestScanItemPage:
 
         content = html(view(rf.get("/"), equipment_id=fleet.available.id))
 
-        assert "Available." in content
+        assert "Ready to rent." in content
         assert f"/rentals/new/?item={fleet.available.id}" in content
 
     def test_an_unknown_or_retired_item_is_a_404(self, rf, fleet):

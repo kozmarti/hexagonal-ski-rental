@@ -6,7 +6,7 @@
   <h1>New rental</h1>
   <p>Step 1 of 2: the customer.</p>
   {% if items %}
-    <p><ins>{{ items|length }} scanned item{{ items|length|pluralize }} will already be ticked on the next step.</ins></p>
+    <p class="notice notice-success" role="status">{{ items|length }} scanned item{{ items|length|pluralize }} will already be ticked on the next step.</p>
   {% endif %}
 
   <form method="post" action="{% url 'rental-new' %}">

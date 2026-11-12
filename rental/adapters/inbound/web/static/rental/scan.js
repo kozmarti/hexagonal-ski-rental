@@ -28,7 +28,8 @@
 
   // Messages are set as text, never as HTML: item names come from the database.
   function show(message, ok, text) {
-    const element = document.createElement(ok ? "ins" : "del");
+    const element = document.createElement("p");
+    element.className = ok ? "notice notice-success" : "notice notice-error";
     element.textContent = text;
     message.replaceChildren(element);
   }

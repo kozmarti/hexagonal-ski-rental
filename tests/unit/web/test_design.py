@@ -2,6 +2,7 @@
 Fake use cases injected: no database, no bootstrap."""
 
 from datetime import date
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -179,3 +180,21 @@ class TestInventoryTitle:
         request = rf.get("/inventory/", {"type": "boots"}, headers={"HX-Request": "true"})
 
         assert "<h2>Boots</h2>" in html(view(request))
+
+
+class TestMessages:
+    WEB = Path(__file__).parents[3] / "rental" / "adapters" / "inbound" / "web"
+
+    def test_messages_use_notice_boxes_never_crossed_out_or_underlined_text(self):
+        """Pico shows <del> crossed out and <ins> underlined (deleted / inserted text):
+        messages after an action use the .notice boxes of app.css instead."""
+        files = [*self.WEB.glob("templates/**/*.html"), *self.WEB.glob("static/rental/*.js")]
+
+        offending = [
+            file.name
+            for file in files
+            if any(tag in file.read_text() for tag in ("<del", "<ins", "<mark", '"del"', '"ins"'))
+        ]
+
+        assert files
+        assert offending == []

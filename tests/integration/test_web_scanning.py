@@ -27,6 +27,6 @@ def test_a_registered_item_gets_a_label_and_a_scan_page(client, settings):
 
     assert labels.count('<div class="label">') == 1
     assert "Atomic Redster" in labels
-    assert "Available." in item_page
+    assert "Ready to rent." in item_page
     assert f"http://192.168.1.20:8000/scan/{skis_id}/" in dialog
     assert 'data-scan="goto"' in client.get("/scan/").content.decode()

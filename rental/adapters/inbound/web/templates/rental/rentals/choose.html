@@ -23,10 +23,10 @@
   <form method="post" action="{% url 'rental-equipment' customer_id %}">
     {% csrf_token %}
     {% for error in form.non_field_errors %}
-      <p><del>{{ error }}</del></p>
+      <p class="notice notice-error" role="alert">{{ error }}</p>
     {% endfor %}
     {% for error in form.equipment.errors %}
-      <p><del>{{ error }}</del></p>
+      <p class="notice notice-error" role="alert">{{ error }}</p>
     {% endfor %}
 
     <div class="grid">

@@ -1,7 +1,7 @@
 {# HTMX answer to a return: replaces the rental's block. #}
 <article>
-  <p>
-    <ins>Rental returned on {{ result.returned_on|date:"D j M" }}.</ins>
+  <p class="notice notice-success" role="status">
+    Rental returned on {{ result.returned_on|date:"D j M" }}.
     All its items are now in maintenance{% if result.needs_repair_ids %},
     {{ result.needs_repair_ids|length }} of them flagged for repair{% endif %}.
   </p>

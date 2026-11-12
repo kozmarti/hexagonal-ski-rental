@@ -1,8 +1,9 @@
-{% load static %}<!doctype html>
+{% load static rental_tags %}<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# viewport-fit=cover: the phone tab bar reaches the bottom edge, above the home indicator. #}
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}Ski Rental{% endblock %}</title>
   <script>
     // Before the page renders, so a theme chosen with the toggle never flashes (theme.js).
@@ -18,7 +19,7 @@
   <script src="{% static 'rental/theme.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-  {% with page=request.resolver_match.url_name %}
+  {% with section=request.resolver_match.url_name|menu_section %}
   <header class="site-header">
     <div class="container">
     <nav>
@@ -26,21 +27,23 @@
         <li><a href="{% url 'dashboard' %}" class="contrast brand">{% include "rental/_logo.svg" %}<strong>Ski Rental</strong></a></li>
       </ul>
       <ul>
-        <li><a href="{% url 'dashboard' %}" {% if page == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
-        <li><a href="{% url 'rentals' %}" {% if page == 'rentals' or page == 'rental-new' or page == 'rental-equipment' or page == 'rental-import' or page == 'rental-import-fit' %}aria-current="page"{% endif %}>Rentals</a></li>
-        <li><a href="{% url 'inventory' %}" {% if page == 'inventory' or page == 'inventory-labels' %}aria-current="page"{% endif %}>Inventory</a></li>
-        <li><a href="{% url 'maintenance' %}" {% if page == 'maintenance' %}aria-current="page"{% endif %}>Maintenance</a></li>
-        <li><a href="{% url 'pricing' %}" {% if page == 'pricing' %}aria-current="page"{% endif %}>Pricing</a></li>
-        <li><a href="{% url 'scan-page' %}" {% if page == 'scan-page' or page == 'scan' %}aria-current="page"{% endif %}>Scan</a></li>
+        {# On phones these five move to the tab bar at the bottom (wide-only); Pricing stays here. #}
+        <li class="wide-only"><a href="{% url 'dashboard' %}" {% if section == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
+        <li class="wide-only"><a href="{% url 'rentals' %}" {% if section == 'rentals' %}aria-current="page"{% endif %}>Rentals</a></li>
+        <li class="wide-only"><a href="{% url 'inventory' %}" {% if section == 'inventory' %}aria-current="page"{% endif %}>Inventory</a></li>
+        <li class="wide-only"><a href="{% url 'maintenance' %}" {% if section == 'maintenance' %}aria-current="page"{% endif %}>Maintenance</a></li>
+        <li><a href="{% url 'pricing' %}" {% if section == 'pricing' %}aria-current="page"{% endif %}>Pricing</a></li>
+        <li class="wide-only"><a href="{% url 'scan-page' %}" {% if section == 'scan' %}aria-current="page"{% endif %}>Scan</a></li>
         <li><button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark mode">☾</button></li>
       </ul>
     </nav>
     </div>
   </header>
-  {% endwith %}
   <main class="container">
     {% block content %}{% endblock %}
   </main>
+  {% include "rental/_tab_bar.html" %}
+  {% endwith %}
 
   {# The QR dialog, filled by any item's "QR" button (rental/_qr_button.html). #}
   <dialog id="qr-dialog">

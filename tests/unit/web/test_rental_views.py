@@ -163,7 +163,7 @@ class TestRentals:
 
         assert "Alex Martin" in page
         assert "180.00 EUR" in page
-        assert "<ins>New</ins>" in page
+        assert '<span class="badge badge-new">New</span>' in page
         assert f'name="damaged" value="{SKIS.id}"' in page
 
 
