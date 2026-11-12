@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 from rental.adapters.outbound.clock import SystemClock
 from rental.adapters.outbound.mongo.context import MongoContext
@@ -12,6 +13,8 @@ from rental.adapters.outbound.mongo.repositories import (
     MongoRentalRepository,
 )
 from rental.adapters.outbound.mongo.unit_of_work import MongoUnitOfWork
+from rental.adapters.outbound.notifications.composite import CompositeNotifier
+from rental.adapters.outbound.notifications.email_notifier import EmailNotifier
 from rental.adapters.outbound.notifications.logging_notifier import LoggingNotifier
 from rental.adapters.outbound.orm.repositories import (
     DjangoCustomerRepository,
@@ -35,6 +38,7 @@ from rental.application.ports.inbound.return_rental import ReturnRental
 from rental.application.ports.outbound.clock import Clock
 from rental.application.ports.outbound.customer_repository import CustomerRepository
 from rental.application.ports.outbound.equipment_repository import EquipmentRepository
+from rental.application.ports.outbound.notifier import Notifier
 from rental.application.ports.outbound.rental_repository import RentalRepository
 from rental.application.ports.outbound.unit_of_work import UnitOfWork
 from rental.application.services.complete_maintenance import CompleteMaintenanceService
@@ -79,6 +83,20 @@ def storage() -> Storage:
     )
 
 
+def notifier() -> Notifier:
+    """The only place that chooses the notification channels: NOTIFIERS lists "logging",
+    "email" or both. With several, a CompositeNotifier passes each event to all of them."""
+    available = {
+        "logging": LoggingNotifier,
+        "email": lambda: EmailNotifier(settings.SHOP_EMAIL, settings.DEFAULT_FROM_EMAIL),
+    }
+    unknown = set(settings.NOTIFIERS) - set(available)
+    if unknown or not settings.NOTIFIERS:
+        raise ImproperlyConfigured(f"NOTIFIERS must list logging and/or email, not {unknown}.")
+    notifiers = [available[name]() for name in settings.NOTIFIERS]
+    return notifiers[0] if len(notifiers) == 1 else CompositeNotifier(notifiers)
+
+
 def register_equipment() -> RegisterEquipment:
     store = storage()
     return RegisterEquipmentService(store.equipment, store.uow)
@@ -113,21 +131,19 @@ def create_rental(clock: Clock | None = None) -> CreateRental:
         store.rentals,
         StaticPriceList(),
         clock or SystemClock(),
-        LoggingNotifier(),
+        notifier(),
         store.uow,
     )
 
 
 def return_rental() -> ReturnRental:
     store = storage()
-    return ReturnRentalService(
-        store.rentals, store.equipment, SystemClock(), LoggingNotifier(), store.uow
-    )
+    return ReturnRentalService(store.rentals, store.equipment, SystemClock(), notifier(), store.uow)
 
 
 def complete_maintenance() -> CompleteMaintenance:
     store = storage()
-    return CompleteMaintenanceService(store.equipment, LoggingNotifier(), store.uow)
+    return CompleteMaintenanceService(store.equipment, notifier(), store.uow)
 
 
 def list_equipment_in_maintenance() -> ListEquipmentInMaintenance:

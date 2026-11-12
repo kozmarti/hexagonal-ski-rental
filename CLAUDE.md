@@ -75,7 +75,7 @@ a rental always starts today (no booking in advance for a future period).
    Events: rental created, rental returned, item sent to maintenance, maintenance completed.
 
 **Out of scope for now**: online booking and reservations for a future period, payments and deposits,
-season rentals, multiple shops, real notification channels (email, SMS), editable price list,
+season rentals, multiple shops, emails to customers and SMS, editable price list,
 staff authentication, DIN calculation. These are future adapters/features, so don't build them unless asked.
 
 The step-by-step branch plan is in [ROADMAP.md](ROADMAP.md).
@@ -101,7 +101,7 @@ rental/
     outbound/memory/   # test adapters: in-memory repositories, unit of work, FixedClock, RecordingNotifier
     outbound/price_list/     # StaticPriceList (MVP prices)
     outbound/clock.py        # SystemClock (today in the shop's time zone)
-    outbound/notifications/  # LoggingNotifier (later: EmailNotifier, SmsNotifier, ...)
+    outbound/notifications/  # LoggingNotifier, EmailNotifier, CompositeNotifier (both at once)
   bootstrap.py         # composition root: wires outbound adapters into services
 config/                # wiring and dev tooling, outside the hexagon (may import bootstrap.py)
   urls.py              # injects the use cases from bootstrap.py into the views
@@ -151,8 +151,11 @@ Ports are defined as `typing.Protocol` classes. Both inbound and outbound ports 
     share a `MongoContext`, which holds the transaction's session.
   - `PriceListRepository`: `StaticPriceList` with fixed prices (MVP, also used in tests).
   - `Clock`: `SystemClock` (production), `FixedClock` (tests).
-  - `Notifier`: `LoggingNotifier` writing to Python `logging` (production, the only one for now),
-    `RecordingNotifier` (tests). No email/SMS/external integrations unless asked.
+  - `Notifier`: `LoggingNotifier` (Python `logging`, the default) and `EmailNotifier` (Django's
+    email, to the shop's `SHOP_EMAIL`; a sending failure is logged, never raised), chosen by
+    `NOTIFIERS=logging|email|logging,email`, read only in `bootstrap.notifier()`. Several at once
+    go through `CompositeNotifier`. `RecordingNotifier` in tests. In development, Mailpit catches
+    every email (http://localhost:8025). No SMS or other external integration unless asked.
 
 ### Rules
 
