@@ -10,51 +10,71 @@
     <a href="{% url 'rental-import' %}" role="button" class="secondary">Import a group</a>
   </p>
 
+  <p class="totals">
+    <strong>{{ dashboard.active_rentals|length }} active rental{{ dashboard.active_rentals|length|pluralize }}</strong>
+    · {{ dashboard.due_back_today|length }} due back today
+    · {% if dashboard.overdue %}<span class="badge badge-overdue">{{ dashboard.overdue|length }} overdue</span>{% else %}0 overdue{% endif %}
+  </p>
+  <nav aria-label="Show">
+    <ul>
+      <li><a href="{% url 'rentals' %}" {% if show == "all" %}aria-current="page"{% endif %}>All</a></li>
+      <li><a href="{% url 'rentals' %}?show=due-today" {% if show == "due-today" %}aria-current="page"{% endif %}>Due back today</a></li>
+      <li><a href="{% url 'rentals' %}?show=overdue" {% if show == "overdue" %}aria-current="page"{% endif %}>Overdue</a></li>
+    </ul>
+  </nav>
+
+  {% if created %}
+    <p><ins>Rental created for {{ created.customer_name }}: {{ created.price|money }}.</ins></p>
+  {% endif %}
   {% if returned %}
     <p><ins>Rental returned. Its items are now in maintenance.</ins></p>
   {% endif %}
 
-  {% for rental in rentals %}
+  {% for rental in pagination.page %}
     <article id="rental-{{ rental.id }}">
       <header>
         <strong>{{ rental.customer_name }}</strong>
         · {{ rental.start_date|date:"D j M" }} → {{ rental.end_date|date:"D j M" }}
         · {{ rental.price|money }}
-        {% if rental.id == created %}<ins>New</ins>{% endif %}
+        {% if rental.id in overdue_ids %}{% include "rental/_badge.html" with status="overdue" %}{% elif rental.id in due_today_ids %}<small>Due back today</small>{% endif %}
+        {% if rental.id == created.id %}<ins>New</ins>{% endif %}
       </header>
       <form method="post" action="{% url 'rental-return' rental.id %}"
             hx-post="{% url 'rental-return' rental.id %}" hx-target="closest article" hx-swap="outerHTML">
         {% csrf_token %}
-        <table>
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Brand and model</th>
-              <th>Size</th>
-              <th>Damaged</th>
-              <th>QR</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in rental.equipment %}
+        <div class="overflow-auto">
+          <table>
+            <thead>
               <tr>
-                <td>{{ item.type|capfirst }}</td>
-                <td>{{ item.brand }} {{ item.model }}</td>
-                <td>{{ item.size|size }}</td>
-                <td>
-                  <label>
-                    <input type="checkbox" name="damaged" value="{{ item.id }}"> Damaged
-                  </label>
-                </td>
-                <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
+                <th>Type</th>
+                <th>Brand and model</th>
+                <th>Size</th>
+                <th>Damaged</th>
+                <th>QR</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for item in rental.equipment %}
+                <tr>
+                  <td>{{ item.type|capfirst }}</td>
+                  <td>{{ item.brand }} {{ item.model }}</td>
+                  <td>{{ item.size|size }}</td>
+                  <td>
+                    <label>
+                      <input type="checkbox" name="damaged" value="{{ item.id }}"> Damaged
+                    </label>
+                  </td>
+                  <td>{% include "rental/_qr_button.html" with item_id=item.id %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
         <button type="submit" class="secondary">Return</button>
       </form>
     </article>
   {% empty %}
-    <p>No active rentals.</p>
+    <p>{% if show == "overdue" %}No overdue rentals.{% elif show == "due-today" %}Nothing due back today.{% else %}No active rentals.{% endif %}</p>
   {% endfor %}
+  {% include "rental/_pagination.html" %}
 {% endblock %}

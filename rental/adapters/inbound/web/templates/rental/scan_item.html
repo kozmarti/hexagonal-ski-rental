@@ -7,6 +7,7 @@
   {# The page a scanned sticker opens, e.g. with a phone's camera: the item and one action. #}
   <article>
     <header>
+      {% include "rental/_badge.html" with status=status repair=item.needs_repair %}
       <strong>{{ item.type|capfirst }} · {{ item.brand }} {{ item.model }}</strong>
       · {{ item.size|size }}{% if item.range %} · {{ item.range|capfirst }}{% endif %}
     </header>

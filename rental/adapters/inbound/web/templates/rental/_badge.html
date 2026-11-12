@@ -1,0 +1,3 @@
+{# A status badge, the same everywhere: status is available, rented, maintenance or overdue; #}
+{# `repair` turns a maintenance badge into a repair one. Colors in static/rental/app.css. #}
+{% if status == "available" %}<span class="badge badge-available">Available</span>{% elif status == "rented" %}<span class="badge badge-rented">Rented</span>{% elif status == "maintenance" and repair %}<span class="badge badge-repair">🔧 Repair</span>{% elif status == "maintenance" %}<span class="badge badge-maintenance">Maintenance</span>{% elif status == "overdue" %}<span class="badge badge-overdue">Overdue</span>{% endif %}

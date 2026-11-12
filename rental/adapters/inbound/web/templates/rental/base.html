@@ -1,18 +1,29 @@
-<!doctype html>
+{% load static %}<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Ski Rental{% endblock %}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <script>
+    // Before the page renders, so a theme chosen with the toggle never flashes (theme.js).
+    try {
+      const theme = localStorage.getItem("theme");
+      if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+    } catch (error) {}
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.cyan.min.css">
+  <link rel="stylesheet" href="{% static 'rental/app.css' %}">
+  <link rel="icon" href="{% static 'rental/favicon.svg' %}" type="image/svg+xml">
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="{% static 'rental/theme.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {% with page=request.resolver_match.url_name %}
-  <header class="container">
+  <header class="site-header">
+    <div class="container">
     <nav>
       <ul>
-        <li><a href="{% url 'dashboard' %}" class="contrast"><strong>Ski Rental</strong></a></li>
+        <li><a href="{% url 'dashboard' %}" class="contrast brand">{% include "rental/_logo.svg" %}<strong>Ski Rental</strong></a></li>
       </ul>
       <ul>
         <li><a href="{% url 'dashboard' %}" {% if page == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a></li>
@@ -21,8 +32,10 @@
         <li><a href="{% url 'maintenance' %}" {% if page == 'maintenance' %}aria-current="page"{% endif %}>Maintenance</a></li>
         <li><a href="{% url 'pricing' %}" {% if page == 'pricing' %}aria-current="page"{% endif %}>Pricing</a></li>
         <li><a href="{% url 'scan-page' %}" {% if page == 'scan-page' or page == 'scan' %}aria-current="page"{% endif %}>Scan</a></li>
+        <li><button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark mode">☾</button></li>
       </ul>
     </nav>
+    </div>
   </header>
   {% endwith %}
   <main class="container">

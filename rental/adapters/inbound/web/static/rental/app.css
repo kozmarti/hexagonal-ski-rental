@@ -1,0 +1,94 @@
+/* On top of Pico.css (its Cyan theme). Works in light and dark mode. */
+
+/* Manrope, served by the app itself (static/rental/fonts, SIL Open Font License): visitors'
+   browsers never contact a third party. One variable file covers every weight. */
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/manrope-latin-variable.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Headings in a deep shade of the main color, instead of plain black or white. */
+h1,
+h2,
+h3 {
+  color: color-mix(in srgb, var(--pico-primary) 55%, var(--pico-color));
+  letter-spacing: -0.01em;
+}
+
+/* The four counters of the dashboard, matching the status badges. */
+.stat { border-top: 4px solid var(--pico-muted-border-color); }
+.stat-due { border-top-color: var(--pico-primary); }
+.stat-overdue { border-top-color: #c62828; }
+.stat-maintenance { border-top-color: #d97706; }
+.stat h2 { margin-bottom: 0; }
+
+/* The menu bar: a line across the whole window under it, and the current page marked with a
+   soft tinted background. No underline: Pico underlines the current link by default. */
+.site-header {
+  /* A very light tint of the main color, like snow in the shade (slightly lighter in dark mode). */
+  background: color-mix(in srgb, var(--pico-primary) 7%, var(--pico-background-color));
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  margin-bottom: var(--pico-spacing);
+}
+.site-header nav strong { white-space: nowrap; }
+/* The logo (rental/_logo.svg): line drawing in the primary color, light and dark mode. */
+.brand { display: inline-flex; align-items: center; gap: 0.4rem; }
+.brand .logo { width: 1.7rem; height: 1.7rem; color: var(--pico-primary); flex: none; }
+.site-header nav a {
+  text-decoration: none;
+  border-radius: var(--pico-border-radius);
+}
+/* Hover: the same tint as the current page, but lighter (not on the "Ski Rental" title). */
+.site-header nav a:not(.contrast):hover {
+  background: color-mix(in srgb, var(--pico-primary-focus) 50%, transparent);
+}
+.site-header nav a[aria-current="page"] {
+  color: var(--pico-primary);
+  font-weight: 600;
+  background: var(--pico-primary-focus);
+}
+
+/* Status badges, the same everywhere. Red only for what needs a person to act. */
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 1rem;
+  font-size: 0.8em;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: #ffffff;
+}
+.badge-available { background: #2e7d32; }
+.badge-rented { background: #6b7280; }
+.badge-maintenance { background: #d97706; }
+.badge-repair,
+.badge-overdue { background: #c62828; }
+
+/* A list's totals, above its table. */
+.totals { color: var(--pico-muted-color); }
+.totals strong { color: var(--pico-color); }
+
+/* Previous / Next under a list. */
+.pagination { display: flex; gap: 1rem; align-items: center; justify-content: center; }
+
+/* The light / dark button in the menu bar: just an icon. */
+.theme-toggle {
+  margin: 0;
+  padding: 0.2rem 0.4rem;
+  border: none;
+  background: none;
+  /* Not var(--pico-color): inside a button Pico sets it to white, for filled buttons. */
+  color: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.theme-toggle:hover,
+.theme-toggle:focus-visible { background: var(--pico-muted-border-color); }

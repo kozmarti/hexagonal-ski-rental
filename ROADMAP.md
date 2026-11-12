@@ -272,10 +272,32 @@ Outbound (swap the technology behind existing ports):
 
 19. `feature/design`: one pass over the look of every screen, web adapter only (core unchanged).
     Includes:
-    - Totals at the top of the lists: Rentals ("3 active rentals · 1 due back today ·
-      1 overdue"), Inventory ("25 items available", following the filters), and on the
-      dashboard in each section title ("Overdue (1)", "Due back today (1)",
-      "In maintenance (4, 1 to repair)").
+    - **A complete Inventory page**: every item in one table with its status (available,
+      rented by whom and until when, in maintenance), a status filter and totals per status.
+      Built by combining `ListAvailableEquipment`, `GetDashboard` and
+      `ListEquipmentInMaintenance`.
+    - **Status badges**, the same everywhere: Available 🟢 green, Rented ⚪ grey,
+      Maintenance 🟠 orange, 🔧 Repair 🔴 red, Overdue 🔴 red (red only for what needs a person
+      to act).
+    - **Totals at the top of the lists**: Inventory ("41 items: 25 available, 12 rented,
+      4 in maintenance", following the filters), Rentals ("3 active rentals · 1 due back today ·
+      1 overdue"), Maintenance ("4 items, 1 to repair"), and on the dashboard in each section
+      title ("Overdue (1)", "Due back today (1)", "In maintenance (4, 1 to repair)").
+    - **Pagination**, 25 rows per page with Previous / Next and "Page 2 of 4", on Inventory,
+      Rentals, Maintenance and Labels. Filters and totals apply to the whole list, not only the
+      visible page. Done in the web adapter (a slice of the use case's list): fine at a shop's
+      size; database-level pagination would need a port change.
+    - **Dashboard sections** show their first 10 rows, with a "See all" link to the full,
+      paginated page.
+    - **Light / dark button** in the menu bar (☾ / ☀): the page follows the device setting until
+      the button is clicked; a click switches between light and dark, with Pico.css's
+      `data-theme`. The choice is remembered in the browser, per device.
+    - **Menu bar**: a line across the window separates it from the page, and the current page
+      is clearly marked with a soft tinted background (no underline).
+
+19b. `feature/mobile`: the mobile style. On phones, the menu becomes a **bottom tab bar** with
+    icons (like a phone app); every page checked at phone width (tables, forms, dialogs).
+    Web adapter only.
 
 ## Phase 6: CD (to discuss at the end)
 
